@@ -19,6 +19,7 @@ var CanvasUI = {
 		this.focused = false;
 		this.dragged = false;
 		this.visible = true;
+		this.enabled = true;
 		this.draggable = true;
 		this.borderSize = 1;
 		this.grabX = 0;
@@ -348,6 +349,11 @@ CanvasUI.GadgetEventHandlerList.prototype.raiseBlurEvent = function() {
 CanvasUI.GadgetCollection.prototype.add = function(gadget) {
 	gadget.parent = this.parent;
 	this.list.push(gadget);
+	
+	// Rebuild the display tree of the gadget
+	this.parent.getDisplayManager().repartitionTree(this.parent);
+	
+	gadget.draw();
 }
 		
 /**
@@ -375,7 +381,7 @@ CanvasUI.GadgetCollection.prototype.draw = function() {
 CanvasUI.GadgetCollection.prototype.raiseToTop = function(gadget) {		
 	var index = this.getGadgetIndex(gadget);
 	if (index > -1) {
-		this.list.splice(i, 1);
+		this.list.splice(index, 1);
 		this.add(gadget);
 	}
 }
@@ -597,6 +603,12 @@ CanvasUI.Gadget.prototype.isVisible = function() {
 	return (this.parent.isVisible());
 }
 
+CanvasUI.Gadget.prototype.isEnabled = function() {
+	if (!this.enabled) return false;
+	if (this.parent == null) return this.enabled;
+	return (this.parent.isEnabled());
+}
+
 CanvasUI.Gadget.prototype.getDisplayManager = function() {
 	if (this.parent != null) return this.parent.getDisplayManager();
 	return null;
@@ -732,16 +744,19 @@ CanvasUI.Gadget.prototype.click = function(x, y) {
 		}
 	}
 	
+	// Stop processing if the gadget is disabled
+	if (!this.isEnabled()) return true;
+	
 	// This gadget has been clicked
 	this.clicked = true;
 	this.setClickedGadget(this);
 	
 	this.setFocusedGadget(null);
 	
-	if (this.draggable) this.dragged = true;
-	
 	this.grabX = x - this.rect.x;
 	this.grabY = y - this.rect.y;
+	
+	this.onClick(x, y);
 	
 	this.draw();
 	
@@ -749,6 +764,8 @@ CanvasUI.Gadget.prototype.click = function(x, y) {
 	
 	return true;
 }
+
+CanvasUI.Gadget.prototype.onClick = function(x, y) { }
 
 CanvasUI.Gadget.prototype.release = function(x, y) {
 
@@ -977,42 +994,17 @@ CanvasUI.Gui.prototype.getClickedGadget = function() { return this.clickGadget; 
 		}
 	},
 		
-	this.Window.prototype.click = function(x, y) {
-		
-		// Exit if click falls outside boundarues
-		if (!this.checkPointCollision(x, y)) return false;
-		
+	this.Window.prototype.onClick = function(x, y) {
+
 		// Ensure gadget is topmost in collection
-		//this.raiseToTop();
-		
-		// Check for collision with children
-		for (var i = this.children.length() - 1; i >= 0; --i) {
-			if (this.children.at(i).click(x, y)) {
-				return true;
-			}
-		}
-		
-		// This gadget has been clicked
-		this.clicked = true;
-		this.setClickedGadget(this);
-		
-		this.setFocusedGadget(null);
-		
+		this.raiseToTop();
+	
 		// Only drag if click within title bar
 		if (this.draggable) {
 			if (y - this.getY() < this.titleHeight) {
 				this.dragged = true;
 			}
 		}
-		
-		this.grabX = x - this.rect.x;
-		this.grabY = y - this.rect.y;
-		
-		this.draw();
-		
-		this.eventHandlers.raiseClickEvent(x, y);
-		
-		return true;
 	}
 
 
@@ -1034,6 +1026,7 @@ function init(canvasId) {
 		
 	var window3 = new Window("Window 3", 50, 50, 200, 200);
 	ui.children.add(window3);
+	window3.enabled = false;
 	
 	var window3button1 = new Button("some text", 10, 13, 100, 20);
 	window3.children.add(window3button1);
@@ -1045,6 +1038,7 @@ function init(canvasId) {
 	var eventHandler = new CanvasUI.GadgetEventHandler();
 	eventHandler.handleReleaseEvent = function(gadget, x, y) {
 		alert('Released ' + gadget.text);
+		gadget.parent.children.add(new Button("new", 30, 30, 30, 30));
 	}
 	window3button1.eventHandlers.addHandler(eventHandler);
 	window3button2.eventHandlers.addHandler(eventHandler);
