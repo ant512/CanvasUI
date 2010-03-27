@@ -3,8 +3,14 @@
 		<title>Canvas UI</title>
 		<script type="application/javascript">
 
+/**
+ * CanvasUI namespace contains all core functionality.
+ */
 var CanvasUI = {
 
+	/**
+	 * Gadget class is the base class for all UI widgets.
+	 */
 	Gadget: function(x, y, width, height) {
 		this.rect = null;
 		this.children = null;
@@ -38,7 +44,7 @@ var CanvasUI = {
 	},
 		
 	/**
-	 * Build a binary tree describing the gadget.
+	 * Builds a scene graph of the specified gadget using a BSP tree.
 	 */
 	DisplayTree: function(gadget) {
 		this.topNode = null;
@@ -103,6 +109,10 @@ var CanvasUI = {
 		this.handleBlurEvent = function(gadget) { }
 	},
 	
+	/**
+	 * Top-level gadget that contains the rest of the UI.  An instance of this
+	 * should be created in order to create a UI.
+	 */
 	Gui: function(canvas) {
 
 		// Call base constructor
@@ -332,63 +342,56 @@ CanvasUI.GadgetEventHandlerList.prototype.raiseBlurEvent = function() {
 	}
 }
 
-	/**
-	 * List of gadgets.
-	 */
-	CanvasUI.GadgetCollection.prototype = {
+/**
+ * Add a gadget to the collection.
+ */
+CanvasUI.GadgetCollection.prototype.add = function(gadget) {
+	gadget.parent = this.parent;
+	this.list.push(gadget);
+}
 		
-		/**
-		 * Add a gadget to the collection.
-		 */
-		add: function(gadget) {
-			gadget.parent = this.parent;
-			this.list.push(gadget);
-		},
+/**
+ * Get the number of gadgets in the collection.
+ */
+CanvasUI.GadgetCollection.prototype.length = function() { return this.list.length; }
 		
-		/**
-		 * Get the number of gadgets in the collection.
-		 */
-		length: function() { return this.list.length; },
+/**
+ * Get the gagdet at the specified index.
+ */
+CanvasUI.GadgetCollection.prototype.at = function(index) { return this.list[index]; }
 		
-		/**
-		 * Get the gagdet at the specified index.
-		 */
-		at: function(index) { return this.list[index]; },
+/**
+ * Draw all items in the collection.
+ */
+CanvasUI.GadgetCollection.prototype.draw = function() {
+	for (var i = 0; i < this.list.length; ++i) {
+		this.list[i].draw();
+	}
+}
+
+/**
+ * Raise the specified gadget to the top (ie. end) of the collection.
+ */
+CanvasUI.GadgetCollection.prototype.raiseToTop = function(gadget) {		
+	var index = this.getGadgetIndex(gadget);
+	if (index > -1) {
+		this.list.splice(i, 1);
+		this.add(gadget);
+	}
+}
 		
-		/**
-		 * Draw all items in the collection.
-		 */
-		draw: function() {
-			for (var i = 0; i < this.list.length; ++i) {
-				this.list[i].draw();
-			}
-		},
-		
-		/**
-		 * Raise the specified gadget to the top (ie. end) of the collection.
-		 */
-		raiseToTop: function(gadget) {
-			
-			var index = this.getGadgetIndex(gadget);
-			if (index > -1) {
-				this.list.splice(i, 1);
-				this.add(gadget);
-			}
-		},
-		
-		/**
-		 * Locate gadget in list.
-		 */
-		getGadgetIndex: function(gadget) {
-			for (var i = 0; i < this.list.length; ++i) {
-				if (this.list[i] == gadget) {
-					return i;
-				}
-			}
-			
-			return -1;
+/**
+ * Locate gadget in list.
+ */
+CanvasUI.GadgetCollection.prototype.getGadgetIndex = function(gadget) {
+	for (var i = 0; i < this.list.length; ++i) {
+		if (this.list[i] == gadget) {
+			return i;
 		}
 	}
+	
+	return -1;
+}
 
 	CanvasUI.DisplayTree.prototype = {
 			
@@ -876,6 +879,10 @@ CanvasUI.Gui.prototype.setClickedGadget = function(gadget) {
 CanvasUI.Gui.prototype.getClickedGadget = function() { return this.clickGadget; }
 
 
+
+
+
+
 	/**
 	 * Button gadget.
 	 */
@@ -1009,11 +1016,11 @@ CanvasUI.Gui.prototype.getClickedGadget = function() { return this.clickGadget; 
 	}
 
 
-var canvas;
+
 var ui;
 
 function init(canvasId) {
-	canvas = document.getElementById(canvasId);
+	var canvas = document.getElementById(canvasId);
 	ui = new CanvasUI.Gui(canvas);
 	
 	var window1 = new Window("Window 1", 10, 10, 60, 60);
