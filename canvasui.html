@@ -122,11 +122,10 @@ var CanvasUI = {
 		/**
 		 * Called when the canvas is clicked - compensates for canvas offset from
 		 * top of document body and dispatches to the UI.
-		 * TODO: Make this handle scrolling offset of document.
 		 */
 		this.handleClick = function(e) {
-			var x = e.clientX - canvas.offsetLeft;
-			var y = e.clientY - canvas.offsetTop;
+			var x = e.clientX - canvas.offsetLeft + window.pageXOffset;
+			var y = e.clientY - canvas.offsetTop + window.pageYOffset;
 			
 			this.click(x, y);
 		}
@@ -137,8 +136,8 @@ var CanvasUI = {
 		 * TODO: Make this handle scrolling offset of document.
 		 */
 		this.handleRelease = function(e) {
-			var x = e.clientX - canvas.offsetLeft;
-			var y = e.clientY - canvas.offsetTop;
+			var x = e.clientX - canvas.offsetLeft + window.pageXOffset;
+			var y = e.clientY - canvas.offsetTop + window.pageYOffset;
 
 			if (this.clickedGadget != null) this.clickedGadget.release(x, y);
 		}
@@ -149,8 +148,8 @@ var CanvasUI = {
 		 * TODO: Make this handle scrolling offset of document.
 		 */
 		this.handleDrag = function(e) {
-			var x = e.clientX - canvas.offsetLeft;
-			var y = e.clientY - canvas.offsetTop;
+			var x = e.clientX - canvas.offsetLeft + window.pageXOffset;
+			var y = e.clientY - canvas.offsetTop + window.pageYOffset;
 			
 			if (this.clickedGadget != null) this.clickedGadget.drag(x, y);
 		}
@@ -370,7 +369,7 @@ CanvasUI.GadgetCollection.prototype.at = function(index) { return this.list[inde
  * Draw all items in the collection.
  */
 CanvasUI.GadgetCollection.prototype.draw = function() {
-	for (var i = 0; i < this.list.length; ++i) {
+	for (var i in this.list) {
 		this.list[i].draw();
 	}
 }
@@ -390,7 +389,7 @@ CanvasUI.GadgetCollection.prototype.raiseToTop = function(gadget) {
  * Locate gadget in list.
  */
 CanvasUI.GadgetCollection.prototype.getGadgetIndex = function(gadget) {
-	for (var i = 0; i < this.list.length; ++i) {
+	for (var i in this.list) {
 		if (this.list[i] == gadget) {
 			return i;
 		}
@@ -399,177 +398,172 @@ CanvasUI.GadgetCollection.prototype.getGadgetIndex = function(gadget) {
 	return -1;
 }
 
-	CanvasUI.DisplayTree.prototype = {
-			
-		/**
-		 * Create the initial tree state.
-		 */
-		createTree: function() {
-			this.topNode = new CanvasUI.DisplayNode(this.owningGadget.rect, null, null, this.owningGadget);
-			this.leaves = new Array();
-			
-			this.partition(this.topNode, this.owningGadget.children.length() - 1);
-		},
+/**
+ * Create the initial tree state.
+ */
+CanvasUI.DisplayTree.prototype.createTree = function() {
+	this.topNode = new CanvasUI.DisplayNode(this.owningGadget.rect, null, null, this.owningGadget);
+	this.leaves = new Array();
+	
+	this.partition(this.topNode, this.owningGadget.children.length() - 1);
+}
 
-		/**
-		 * Remove the dead leaves from the leaf array.  A leaf is considered
-		 * dead if it belongs to the gadget being repartitioned, or
-		 * the gadget it belongs to is a child of the repartitioned gadget.
-		 */
-		removeDeadLeaves: function(gadget) {
-		
-			var i = 0;
-			while (i < this.leaves.length) {
-				var leafGadget = this.leaves[i].gadget;
-				
-				// Check the leaf's gadget and that gadget's ancestors to see
-				// if the leaf is affected by the repartition.  If so, remove
-				// the leaf
-				while (leafGadget != null) {
-					if (leafGadget == gadget) {
-					
-						// Leaf affected by partition, so remove it
-						this.leaves.splice(i, 1);
-						break;
-					}
-					
-					leafGadget = leafGadget.parent;
-				}
-			
-				// Advance to next leaf if we did not remove one
-				if (leafGadget == null) {
-					++i;
-				}
-			}
-		},
+/**
+ * Remove the dead leaves from the leaf array.  A leaf is considered
+ * dead if it belongs to the gadget being repartitioned, or
+ * the gadget it belongs to is a child of the repartitioned gadget.
+ */
+CanvasUI.DisplayTree.prototype.removeDeadLeaves = function(gadget) {
 
-		/**
-		 * Recalculate the tree for a given gadget.
-		 */
-		repartition: function(gadget, node) {
+	var i = 0;
+	while (i < this.leaves.length) {
+		var leafGadget = this.leaves[i].gadget;
 		
-			// Special case - gadget is topmost gadget, in which case recreate tree
-			if (gadget == null) {
-				this.createTree();
-				return;
+		// Check the leaf's gadget and that gadget's ancestors to see
+		// if the leaf is affected by the repartition.  If so, remove
+		// the leaf
+		while (leafGadget != null) {
+			if (leafGadget == gadget) {
+			
+				// Leaf affected by partition, so remove it
+				this.leaves.splice(i, 1);
+				break;
 			}
 			
-			// Obtain the top node if not specified
-			if (node == null) {
-				node = this.topNode;
-				
-				this.removeDeadLeaves(gadget);
-			}
-			
-			// If this node contains the gadget, repartition it
-			if (node.gadget == gadget) {
-				node.left = null;
-				node.right = null;
-				this.partition(node, gadget.children.length() - 1);
-				return;
-			}
-		
-			// This node does not contain the gadget, so recurse into children
-			if (node.left != null) this.repartition(gadget, node.left);
-			if (node.right != null) this.repartition(gadget, node.right);
-		},
-		
-		partition: function(node, childIndex) {
-		
-			// Guard against empty nodes
-			if ((node.rect.width == 0) || (node.rect.height == 0)) return;
-		
-			var child = null;
-			
-			var childX1;
-			var childX2;
-			var childY1;
-			var childY2;
-		
-			while ((node.left == null) && (childIndex > -1)) {
-				
-				// Ignore any invisible children
-				do {
-					child = node.gadget.children.at(childIndex);
-					
-					if (!child.visible) childIndex--;
-				} while ((!child.visible) && (childIndex > -1));
-			
-				// Calculate child co-ords
-				childX1 = child.getX();
-				childY1 = child.getY();
-				childX2 = childX1 + child.getWidth() - 1;
-				childY2 = childY1 + child.getHeight() -1;
-				
-				// Attempt to partition the node
-				if ((childX1 > node.rect.x) && (childX1 < node.rect.x + node.rect.width - 1)) {
-					// Partition at left edge
-					this.horizSplit(node, childX1 - 1);
-				
-				} else if ((childX2 >= node.rect.x) && (childX2 < node.rect.x + node.rect.width - 1)) {
-					// Partition at right edge
-					this.horizSplit(node, childX2);
-		
-				} else if ((childX1 <= node.rect.x) && (childX2 >= node.rect.x + node.rect.width - 1)) {
-					// Attempt to partition vertically only if the child intersects the node
-				
-					if ((childY1 > node.rect.y) && (childY1 < node.rect.y + node.rect.height - 1)) {
-						// Partition at top edge
-						this.vertSplit(node, childY1 - 1);
-					
-					} else if ((childY2 >= node.rect.y) && (childY2 < node.rect.y + node.rect.height - 1)) {
-						// Partition at bottom edge
-						this.vertSplit(node, childY2);
-					
-					} else if ((childY1 <= node.rect.y) && (childY2 >= node.rect.y + node.rect.height - 1)) {
-						
-						// Node is totally surrounded by the child gadget
-						node.gadget = child;
-					
-						this.partition(node, child.children.length() - 1);
-						return;
-					}
-				}
-			
-				// Move to the next child if no partitioning has taken place
-				if (node.left == null) childIndex--;
-			}
-		
-			// Attempt to partition any newly-created subnodes
-			if (node.left != null) {
-			
-				// Continue partitioning
-				this.partition(node.left, childIndex);
-				this.partition(node.right, childIndex);
-			} else {
-				this.leaves.push(node);
-			}
-		},
-
-		horizSplit: function(node, x) {
-		
-			// Create left split
-			var leftRect = new CanvasUI.Rectangle(node.rect.x, node.rect.y, (x - node.rect.x) + 1, node.rect.height);
-			node.left = new CanvasUI.DisplayNode(leftRect, null, null, node.gadget);
-		
-			// Create right split
-			var rightRect = new CanvasUI.Rectangle(x + 1, node.rect.y, node.rect.width - leftRect.width, node.rect.height);
-			node.right = new CanvasUI.DisplayNode(rightRect, null, null, node.gadget);
-		},
-
-		vertSplit: function(node, y) {
-			
-			// Create top split
-			var topRect = new CanvasUI.Rectangle(node.rect.x, node.rect.y, node.rect.width, (y - node.rect.y) + 1);
-			node.left = new CanvasUI.DisplayNode(topRect, null, null, node.gadget);
-			
-			// Create bottom split
-			var bottomRect = new CanvasUI.Rectangle(node.rect.x, y + 1, node.rect.width, node.rect.height - topRect.height);
-			node.right = new CanvasUI.DisplayNode(bottomRect, null, null, node.gadget);
+			leafGadget = leafGadget.parent;
+		}
+	
+		// Advance to next leaf if we did not remove one
+		if (leafGadget == null) {
+			++i;
 		}
 	}
+}
 
+/**
+ * Recalculate the tree for a given gadget.
+ */
+CanvasUI.DisplayTree.prototype.repartition = function(gadget, node) {
 
+	// Special case - gadget is topmost gadget, in which case recreate tree
+	if (gadget == null) {
+		this.createTree();
+		return;
+	}
+	
+	// Obtain the top node if not specified
+	if (node == null) {
+		node = this.topNode;
+		
+		this.removeDeadLeaves(gadget);
+	}
+	
+	// If this node contains the gadget, repartition it
+	if (node.gadget == gadget) {
+		node.left = null;
+		node.right = null;
+		this.partition(node, gadget.children.length() - 1);
+		return;
+	}
+
+	// This node does not contain the gadget, so recurse into children
+	if (node.left != null) this.repartition(gadget, node.left);
+	if (node.right != null) this.repartition(gadget, node.right);
+}
+
+CanvasUI.DisplayTree.prototype.partition = function(node, childIndex) {
+
+	// Guard against empty nodes
+	if ((node.rect.width == 0) || (node.rect.height == 0)) return;
+
+	var child = null;
+	
+	var childX1;
+	var childX2;
+	var childY1;
+	var childY2;
+
+	while ((node.left == null) && (childIndex > -1)) {
+		
+		// Ignore any invisible children
+		do {
+			child = node.gadget.children.at(childIndex);
+			
+			if (!child.visible) childIndex--;
+		} while ((!child.visible) && (childIndex > -1));
+	
+		// Calculate child co-ords
+		childX1 = child.getX();
+		childY1 = child.getY();
+		childX2 = childX1 + child.getWidth() - 1;
+		childY2 = childY1 + child.getHeight() -1;
+		
+		// Attempt to partition the node
+		if ((childX1 > node.rect.x) && (childX1 < node.rect.x + node.rect.width - 1)) {
+			// Partition at left edge
+			this.horizSplit(node, childX1 - 1);
+		
+		} else if ((childX2 >= node.rect.x) && (childX2 < node.rect.x + node.rect.width - 1)) {
+			// Partition at right edge
+			this.horizSplit(node, childX2);
+
+		} else if ((childX1 <= node.rect.x) && (childX2 >= node.rect.x + node.rect.width - 1)) {
+			// Attempt to partition vertically only if the child intersects the node
+		
+			if ((childY1 > node.rect.y) && (childY1 < node.rect.y + node.rect.height - 1)) {
+				// Partition at top edge
+				this.vertSplit(node, childY1 - 1);
+			
+			} else if ((childY2 >= node.rect.y) && (childY2 < node.rect.y + node.rect.height - 1)) {
+				// Partition at bottom edge
+				this.vertSplit(node, childY2);
+			
+			} else if ((childY1 <= node.rect.y) && (childY2 >= node.rect.y + node.rect.height - 1)) {
+				
+				// Node is totally surrounded by the child gadget
+				node.gadget = child;
+			
+				this.partition(node, child.children.length() - 1);
+				return;
+			}
+		}
+	
+		// Move to the next child if no partitioning has taken place
+		if (node.left == null) childIndex--;
+	}
+
+	// Attempt to partition any newly-created subnodes
+	if (node.left != null) {
+	
+		// Continue partitioning
+		this.partition(node.left, childIndex);
+		this.partition(node.right, childIndex);
+	} else {
+		this.leaves.push(node);
+	}
+}
+
+CanvasUI.DisplayTree.prototype.horizSplit = function(node, x) {
+
+	// Create left split
+	var leftRect = new CanvasUI.Rectangle(node.rect.x, node.rect.y, (x - node.rect.x) + 1, node.rect.height);
+	node.left = new CanvasUI.DisplayNode(leftRect, null, null, node.gadget);
+
+	// Create right split
+	var rightRect = new CanvasUI.Rectangle(x + 1, node.rect.y, node.rect.width - leftRect.width, node.rect.height);
+	node.right = new CanvasUI.DisplayNode(rightRect, null, null, node.gadget);
+}
+
+CanvasUI.DisplayTree.prototype.vertSplit = function(node, y) {
+	
+	// Create top split
+	var topRect = new CanvasUI.Rectangle(node.rect.x, node.rect.y, node.rect.width, (y - node.rect.y) + 1);
+	node.left = new CanvasUI.DisplayNode(topRect, null, null, node.gadget);
+	
+	// Create bottom split
+	var bottomRect = new CanvasUI.Rectangle(node.rect.x, y + 1, node.rect.width, node.rect.height - topRect.height);
+	node.right = new CanvasUI.DisplayNode(bottomRect, null, null, node.gadget);
+}
 
 CanvasUI.Gadget.prototype.init = function(x, y, width, height) {
 	this.rect = new CanvasUI.Rectangle(x, y, width, height);
@@ -577,6 +571,9 @@ CanvasUI.Gadget.prototype.init = function(x, y, width, height) {
 	this.eventHandlers = new CanvasUI.GadgetEventHandlerList(this);
 }
 
+/**
+ * Gets the X co-ord of the gadget relative to the top-level gadget.
+ */
 CanvasUI.Gadget.prototype.getX = function() {
 	if (this.parent != null) {
 		return this.rect.x + this.parent.getX();
@@ -585,6 +582,9 @@ CanvasUI.Gadget.prototype.getX = function() {
 	return this.rect.x;
 }
 
+/**
+ * Gets the Y co-ord of the gadget relative to the top-level gadget.
+ */
 CanvasUI.Gadget.prototype.getY = function() {
 	if (this.parent != null) {
 		return this.rect.y + this.parent.getY();
