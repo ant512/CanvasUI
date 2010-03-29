@@ -176,6 +176,7 @@ var CanvasUI = {
 		var obj = this;
 		this.canvas.addEventListener("mousedown", function(e) { obj.handleClick(e); }, false);
 		this.canvas.addEventListener("mouseup", function(e) { obj.handleRelease(e); }, false);
+		this.canvas.addEventListener("mouseout", function(e) { obj.handleRelease(e); }, false);
 		this.canvas.addEventListener("mousemove", function(e) { obj.handleDrag(e); }, false);
 
 		// Set up the clip rect manager
