@@ -63,7 +63,7 @@ var CanvasUI = {
 	 */
 	GadgetCollection: function(gadget) {
 		this.list = new Array();
-		this.parent = gadget;
+		this.gadget = gadget;
 	},
 
 	/**
@@ -88,7 +88,8 @@ var CanvasUI = {
 	 */
 	Graphics: function(gadget) {
 		this.owningGadget = gadget;
-		this.context = gadget.getCanvas().getContext("2d");
+		this.canvas = gadget.getCanvas();
+		this.context = this.canvas == null ? null : this.canvas.getContext("2d");
 		this.displayManager = gadget.getDisplayManager();
 		this.fontSize = "12px";
 		this.fontFamily = "sans-serif";
@@ -190,10 +191,24 @@ var CanvasUI = {
 		// Call base constructor
 		CanvasUI.Gadget.prototype.constructor.call(this, x, y, width, height);
 		
-		// Public members
 		this.text = text;
 		this.draggable = false;
 		
+		this.borderSize.top = 1;
+		this.borderSize.right = 1;
+		this.borderSize.bottom = 1;
+		this.borderSize.left = 1;
+	},
+	
+	/**
+	 * Clickable button that displays text.
+	 */
+	WindowCloseButton: function(x, y, width, height) {
+
+		// Call base constructor
+		CanvasUI.Gadget.prototype.constructor.call(this, x, y, width, height);
+		
+		this.draggable = false;
 		this.borderSize.top = 1;
 		this.borderSize.right = 1;
 		this.borderSize.bottom = 1;
@@ -213,10 +228,22 @@ var CanvasUI = {
 		this.borderSize.right = 6;
 		this.borderSize.bottom = 6;
 		this.borderSize.left = 6;
+		
+		var closeButton = new CanvasUI.WindowCloseButton(0, 0, this.borderSize.top, this.borderSize.top);
+		this.children.add(closeButton);
+		
+		// Define event handler for close button
+		var eventHandler = new CanvasUI.GadgetEventHandler();
+		eventHandler.handleReleaseEvent = function(gadget, x, y) {
+			gadget.parent.close();
+		}
+		closeButton.eventHandlers.addHandler(eventHandler);
 	}
 }
 
 CanvasUI.Graphics.prototype.drawBevelledRect = function(rect, lightColour, darkColour) {
+	if (this.context == null) return;
+	
 	this.fillRect(new CanvasUI.Rectangle(rect.x, rect.y, rect.width, 1), lightColour);
 	this.fillRect(new CanvasUI.Rectangle(rect.x, rect.y, 1, rect.height), lightColour);
 	this.fillRect(new CanvasUI.Rectangle(rect.x + rect.width - 1, rect.y, 1, rect.height), darkColour);
@@ -224,14 +251,18 @@ CanvasUI.Graphics.prototype.drawBevelledRect = function(rect, lightColour, darkC
 }
 			
 CanvasUI.Graphics.prototype.drawRect = function(rect, colour) {
-	for (var i = 0; i < displayManager.tree.leaves.length; ++i) {
+	if (this.context == null) return;
+	
+	for (var i = 0; i < this.displayManager.tree.leaves.length; ++i) {
 		if (this.displayManager.tree.leaves[i].gadget == this.owningGadget) {
-			this.drawClippedRect(rect, colour, displayManager.tree.leaves[i].rect);
+			this.drawClippedRect(rect, colour, this.displayManager.tree.leaves[i].rect);
 		}
 	}
 }
 
 CanvasUI.Graphics.prototype.fillText = function(text, x, y, colour) {
+	if (this.context == null) return;
+	
 	for (var i = 0; i < this.displayManager.getLeaves().length; ++i) {
 		if (this.displayManager.getLeaves()[i].gadget == this.owningGadget) {
 			this.fillClippedText(text, x, y, colour, this.displayManager.getLeaves()[i].rect);
@@ -240,6 +271,7 @@ CanvasUI.Graphics.prototype.fillText = function(text, x, y, colour) {
 }
 		
 CanvasUI.Graphics.prototype.fillClippedText = function(text, x, y, colour, clipRect) {
+	if (this.context == null) return;
 		
 	// Compensate for gadget offset
 	x += this.owningGadget.getX();
@@ -258,6 +290,8 @@ CanvasUI.Graphics.prototype.fillClippedText = function(text, x, y, colour, clipR
 }
 
 CanvasUI.Graphics.prototype.getTextWidth = function(text) {
+	if (this.context == null) return 0;
+	
 	this.context.save();
 	this.context.font = this.fontSize + ', ' + this.fontFamily;
 	var width = this.context.measureText(text).width
@@ -267,6 +301,7 @@ CanvasUI.Graphics.prototype.getTextWidth = function(text) {
 }
 	
 CanvasUI.Graphics.prototype.drawClippedRect = function(rect, colour, clipRect) {
+	if (this.context == null) return;
 		
 	// Compensate for gadget offset
 	var x = rect.x + this.owningGadget.getX();
@@ -284,6 +319,7 @@ CanvasUI.Graphics.prototype.drawClippedRect = function(rect, colour, clipRect) {
 }
 		
 CanvasUI.Graphics.prototype.fillClippedRect = function(rect, colour, clipRect) {
+	if (this.context == null) return;
 		
 	// Compensate for gadget offset
 	var x = rect.x + this.owningGadget.getX();
@@ -301,6 +337,8 @@ CanvasUI.Graphics.prototype.fillClippedRect = function(rect, colour, clipRect) {
 }
 		
 CanvasUI.Graphics.prototype.fillRect = function(rect, colour) {
+	if (this.context == null) return;
+	
 	for (var i = 0; i < this.displayManager.getLeaves().length; ++i) {
 		if (this.displayManager.getLeaves()[i].gadget == this.owningGadget) {
 			this.fillClippedRect(rect, colour, this.displayManager.getLeaves()[i].rect);
@@ -395,13 +433,29 @@ CanvasUI.GadgetEventHandlerList.prototype.raiseBlurEvent = function() {
  * Add a gadget to the collection.
  */
 CanvasUI.GadgetCollection.prototype.add = function(gadget) {
-	gadget.parent = this.parent;
+	gadget.parent = this.gadget;
 	this.list.push(gadget);
 	
 	// Rebuild the display tree of the gadget
-	this.parent.getDisplayManager().repartitionTree(this.parent);
+	if (this.gadget != null) {
+		if (this.gadget.getDisplayManager() != null) {
+			this.gadget.getDisplayManager().repartitionTree(this.gadget);
+		}
+	}
 	
 	gadget.draw();
+}
+
+CanvasUI.GadgetCollection.prototype.remove = function(gadget) {
+	var index = this.getGadgetIndex(gadget);
+	if (index > -1) {
+		this.list.splice(index, 1);
+	}
+	
+	gadget.parent = null;
+	
+	this.gadget.getDisplayManager().repartitionTree(this.gadget);
+	this.gadget.draw();
 }
 		
 /**
@@ -685,6 +739,12 @@ CanvasUI.Gadget.prototype.setClickedGadget = function(gadget) {
 CanvasUI.Gadget.prototype.getClickedGadget = function() {
 	if (this.parent != null) return this.parent.getClickedGadget();
 	return null;
+}
+
+CanvasUI.Gadget.prototype.close = function() {
+	if (this.parent != null) {
+		this.parent.children.remove(this);
+	}
 }
 
 CanvasUI.Gadget.prototype.draw = function() {
@@ -996,6 +1056,41 @@ CanvasUI.Button.prototype.drawBorder = function(gfx) {
 }
 
 /**
+ * Window close button.
+ */
+CanvasUI.WindowCloseButton.prototype = new CanvasUI.Gadget;
+
+CanvasUI.WindowCloseButton.prototype.constructor = CanvasUI.WindowCloseButton;
+
+CanvasUI.WindowCloseButton.prototype.drawBackground = function(gfx) {
+	var drawRect = new CanvasUI.Rectangle(0, 0, this.rect.width, this.rect.height);
+	
+	var textX = (this.rect.width - gfx.getTextWidth(this.text)) / 2;
+	var textY = this.rect.height - (parseInt(gfx.fontSize) / 2);
+	
+	var colour = this.parent.focused ? '#aaf' : '#ddf';
+	
+	gfx.fillRect(drawRect, colour);
+	gfx.fillRect(drawRect, colour);
+	var quarterWidth = (this.rect.height / 4);
+	var quarterHeight = (this.rect.height / 4);
+	var glyphWidth = (this.rect.width / 2);
+	var glyphHeight = (this.rect.height / 2);
+	gfx.drawRect(new CanvasUI.Rectangle(quarterWidth, quarterHeight, glyphWidth, glyphHeight), this.shadowColour);
+}
+
+CanvasUI.WindowCloseButton.prototype.drawBorder = function(gfx) {
+	var drawRect = new CanvasUI.Rectangle(0, 0, this.rect.width, this.rect.height);
+	
+	if (this.clicked) {
+		gfx.drawBevelledRect(drawRect, this.shadowColour, this.shineColour);
+	} else {
+		gfx.drawBevelledRect(drawRect, this.shineColour, this.shadowColour);
+	}
+}
+
+
+/**
  * Window gadget.
  */
 CanvasUI.Window.prototype = new CanvasUI.Gadget;
@@ -1014,7 +1109,7 @@ CanvasUI.Window.prototype.drawBorder = function(gfx) {
 	var rightRect = new CanvasUI.Rectangle(this.rect.width - this.borderSize.right, this.borderSize.top - 1, this.borderSize.right, this.rect.height - this.borderSize.top + 1);
 	var bottomRect = new CanvasUI.Rectangle(0, this.rect.height - this.borderSize.bottom, this.rect.width, this.borderSize.bottom);
 	
-	var borderColour = this.focused ? '#aaf' : '#eef';
+	var borderColour = this.focused ? '#aaf' : '#ddf';
 	
 	// Draw left
 	gfx.fillRect(leftRect, borderColour);
@@ -1024,9 +1119,8 @@ CanvasUI.Window.prototype.drawBorder = function(gfx) {
 	
 	// Draw top
 	gfx.fillRect(titleRect, borderColour);
-	//gfx.drawBevelledRect(titleRect, this.shineColour, this.shadowColour);
 	var fontHeight = parseInt(gfx.fontSize);
-	gfx.fillText(this.title, (this.getWidth() - gfx.getTextWidth(this.title)) / 2, this.borderSize.top - (fontHeight / 2), this.shadowColour);
+	gfx.fillText(this.title, ((this.getWidth() - this.children.at(0).getWidth() - gfx.getTextWidth(this.title)) / 2) + this.children.at(0).getWidth(), this.borderSize.top - (fontHeight / 2), this.shadowColour);
 	
 	// Draw bottom
 	gfx.fillRect(bottomRect, borderColour);
