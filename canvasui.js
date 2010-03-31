@@ -1070,6 +1070,7 @@ CanvasUI.WindowCloseButton.prototype.drawBackground = function(gfx) {
 	var textY = this.rect.height - (parseInt(gfx.fontSize) / 2);
 	
 	var colour = this.parent.focused ? '#aaf' : '#ddf';
+	colour = this.parent.dragged ? '#88f' : colour;
 	
 	gfx.fillRect(drawRect, colour);
 	gfx.fillRect(drawRect, colour);
@@ -1110,7 +1111,11 @@ CanvasUI.Window.prototype.drawBorder = function(gfx) {
 	var rightRect = new CanvasUI.Rectangle(this.rect.width - this.borderSize.right, this.borderSize.top - 1, this.borderSize.right, this.rect.height - this.borderSize.top + 1);
 	var bottomRect = new CanvasUI.Rectangle(0, this.rect.height - this.borderSize.bottom, this.rect.width, this.borderSize.bottom);
 	
+	// Choose border colour based on focus
 	var borderColour = this.focused ? '#aaf' : '#ddf';
+	
+	// Update border colour based on drag
+	borderColour = this.dragged ? '#88f' : borderColour;
 	
 	// Draw left
 	gfx.fillRect(leftRect, borderColour);
@@ -1135,11 +1140,7 @@ CanvasUI.Window.prototype.drawBorder = function(gfx) {
 	gfx.drawBevelledRect(innerRect, this.shadowColour, this.shineColour);
 	
 	// Draw outline
-	if (this.dragged) {
-		gfx.drawBevelledRect(borderRect, this.shadowColour, this.shineColour);
-	} else {
-		gfx.drawBevelledRect(borderRect, this.shineColour, this.shadowColour);
-	}
+	gfx.drawBevelledRect(borderRect, this.shineColour, this.shadowColour);
 }
 		
 CanvasUI.Window.prototype.onClick = function(x, y) {
