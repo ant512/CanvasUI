@@ -1097,7 +1097,7 @@ CanvasUI.WindowCloseButton.prototype.drawBorder = function(gfx) {
  */
 CanvasUI.Window.prototype = new CanvasUI.Gadget;
 
-CanvasUI.Window.prototype.constructor = Window;
+CanvasUI.Window.prototype.constructor = CanvasUI.Window;
 
 CanvasUI.Window.prototype.drawBackground = function(gfx) {
 	var drawRect = new CanvasUI.Rectangle(0, 0, this.rect.width, this.rect.height);
