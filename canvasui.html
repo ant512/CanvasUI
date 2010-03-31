@@ -41,6 +41,21 @@ function init(canvasId) {
 	window3button1.eventHandlers.addHandler(eventHandler);
 	window3button2.eventHandlers.addHandler(eventHandler);
 	
+	var listbox = new CanvasUI.ListBox(rect.x, rect.y + 40, 100, 100);
+	listbox.addOption("text 1", 0);
+	listbox.addOption("text 2", 1);
+	listbox.addOption("text 3", 2);
+	listbox.addOption("text 4", 3);
+	listbox.addOption("text 5", 4);
+	listbox.addOption("text 6", 5);
+	listbox.addOption("text 7", 6);
+	listbox.addOption("text 8", 7);
+	listbox.addOption("text 9", 8);
+	listbox.addOption("text 10", 9);
+	listbox.addOption("text 11", 10);
+	listbox.addOption("text 12", 11);
+	window3.children.add(listbox);
+	
 	ui.show();
 }
 

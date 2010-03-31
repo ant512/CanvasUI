@@ -239,6 +239,24 @@ var CanvasUI = {
 			gadget.parent.close();
 		}
 		closeButton.eventHandlers.addHandler(eventHandler);
+	},
+	
+	ListBox: function(x, y, width, height) {
+		CanvasUI.Gadget.prototype.constructor.call(this, x, y, width, height);
+		
+		this.borderSize.top = 1;
+		this.borderSize.right = 1;
+		this.borderSize.bottom = 1;
+		this.borderSize.left = 1;
+		
+		this.options = new Array();
+		this.spacing = 4;
+		this.selected = false;
+	},
+	
+	ListBoxOption: function(text, value) {
+		this.text = text;
+		this.value = value;
 	}
 }
 
@@ -1156,3 +1174,27 @@ CanvasUI.Window.prototype.onClick = function(x, y) {
 	}
 }
 
+/**
+ * ListBox gadget.
+ */
+CanvasUI.ListBox.prototype = new CanvasUI.Gadget;
+
+CanvasUI.ListBox.prototype.constructor = CanvasUI.ListBox;
+
+CanvasUI.ListBox.prototype.drawBackground = function(gfx) {
+	var drawRect = new CanvasUI.Rectangle(0, 0, this.rect.width, this.rect.height);
+	gfx.fillRect(drawRect, this.backColour);
+	
+	var rect = this.getClientRect();
+	var itemHeight = (parseInt(gfx.fontSize) + this.spacing);
+	
+	for (var i = 0; i < this.options.length; ++i) {
+		var itemRect = new CanvasUI.Rectangle(0, rect.y + (itemHeight * i), this.rect.width, (parseInt(gfx.fontSize) + this.spacing));
+		gfx.fillRect(itemRect, this.shineColour);
+		gfx.fillText(this.options[i].text, itemRect.x + this.spacing, itemRect.y + itemHeight - (this.spacing / 2), this.shadowColour);
+	}
+}
+
+CanvasUI.ListBox.prototype.addOption = function(text, value) {
+	this.options.push(new CanvasUI.ListBoxOption(text, value));
+}
