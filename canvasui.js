@@ -103,7 +103,7 @@ var CanvasUI = {
 		this.handleClickEvent = function(gadget, x, y) { }
 		this.handleReleaseEvent = function(gadget, x, y) { }
 		this.handleReleaseOutsideEvent = function(gadget, x, y) { }
-		this.handleDragEvent = function(gadget, x, y) { }
+		this.handleDragEvent = function(gadget, x, y, dx, dy) { }
 		this.handleFocusEvent = function(gadget) { }
 		this.handleBlurEvent = function(gadget) { }
 	},
@@ -136,6 +136,9 @@ var CanvasUI = {
 			var y = e.clientY - canvas.offsetTop + window.pageYOffset;
 			
 			this.click(x, y);
+			
+			this.oldMouseX = x;
+			this.oldMouseY = y;
 		}
 
 		/**
@@ -148,6 +151,9 @@ var CanvasUI = {
 			var y = e.clientY - canvas.offsetTop + window.pageYOffset;
 
 			if (this.clickedGadget != null) this.clickedGadget.release(x, y);
+			
+			this.oldMouseX = -1;
+			this.oldMouseY = -1;
 		}
 		
 		/**
@@ -159,7 +165,10 @@ var CanvasUI = {
 			var x = e.clientX - canvas.offsetLeft + window.pageXOffset;
 			var y = e.clientY - canvas.offsetTop + window.pageYOffset;
 			
-			if (this.clickedGadget != null) this.clickedGadget.drag(x, y);
+			if (this.clickedGadget != null) this.clickedGadget.drag(x, y, x - this.oldMouseX, y - this.oldMouseY);
+			
+			this.oldMouseX = x;
+			this.oldMouseY = y;
 		}
 		
 		// Set member values
@@ -172,6 +181,9 @@ var CanvasUI = {
 		this.focusedGadget = null;		// Currently focused gadget
 		this.displayManager = null;		// Manages the clipping rects
 
+		this.oldMouseX = -1;			// Last observed mouse position
+		this.oldMouseY = -1;			// Last observed mouse position
+		
 		// Grab a pointer to the canvas and set up event handlers
 		var obj = this;
 		this.canvas.addEventListener("mousedown", function(e) { obj.handleClick(e); }, false);
@@ -244,19 +256,21 @@ var CanvasUI = {
 	ListBox: function(x, y, width, height) {
 		CanvasUI.Gadget.prototype.constructor.call(this, x, y, width, height);
 		
-		this.borderSize.top = 1;
-		this.borderSize.right = 1;
-		this.borderSize.bottom = 1;
-		this.borderSize.left = 1;
+		this.borderSize.top = 4;
+		this.borderSize.right = 4;
+		this.borderSize.bottom = 4;
+		this.borderSize.left = 4;
 		
 		this.options = new Array();
-		this.spacing = 4;
 		this.selected = false;
+		this.viewY = 0;
+		this.itemHeight = 16;
 	},
 	
 	ListBoxOption: function(text, value) {
 		this.text = text;
 		this.value = value;
+		this.selected = false;
 	}
 }
 
@@ -424,9 +438,9 @@ CanvasUI.GadgetEventHandlerList.prototype.raiseReleaseOutsideEvent = function(x,
 /**
  * Raise a drag event to to all handlers in the list.
  */
-CanvasUI.GadgetEventHandlerList.prototype.raiseDragEvent = function(x, y) {
+CanvasUI.GadgetEventHandlerList.prototype.raiseDragEvent = function(x, y, dx, dy) {
 	for (var i in this.list) {
-		this.list[i].handleDragEvent(this.owningGadget, x, y);
+		this.list[i].handleDragEvent(this.owningGadget, x, y, dx, dy);
 	}
 }
 
@@ -928,12 +942,14 @@ CanvasUI.Gadget.prototype.release = function(x, y) {
 	return false;
 }
 
-CanvasUI.Gadget.prototype.drag = function(x, y) {
+CanvasUI.Gadget.prototype.onDrag = function(x, y, dx, dy) { }
+
+CanvasUI.Gadget.prototype.drag = function(x, y, dx, dy) {
 	
 	if (this.dragged) {
-		this.moveTo(x - this.grabX, y - this.grabY);
+		this.onDrag(x, y, dx, dy);
 		
-		this.eventHandlers.raiseDragEvent(x, y);
+		this.eventHandlers.raiseDragEvent(x, y, dx, dy);
 			
 		return true;
 	}
@@ -946,15 +962,15 @@ CanvasUI.Gadget.prototype.getMinChildX = function() {
 }
 
 CanvasUI.Gadget.prototype.getMinChildY = function() {
-	return this.borderSize.right;
+	return this.borderSize.top;
 }
 
 CanvasUI.Gadget.prototype.getMaxChildX = function() {
-	return this.rect.width - this.borderSize.left - this.borderSize.right - 1;
+	return this.rect.width - this.borderSize.right - 1;
 }
 
 CanvasUI.Gadget.prototype.getMaxChildY = function() {
-	return this.rect.height - this.borderSize.top - this.borderSize.bottom - 1;
+	return this.rect.height - this.borderSize.bottom - 1;
 }
 
 CanvasUI.Gadget.prototype.moveTo = function(x, y) {
@@ -1174,6 +1190,10 @@ CanvasUI.Window.prototype.onClick = function(x, y) {
 	}
 }
 
+CanvasUI.Window.prototype.onDrag = function(x, y, dx, dy) {
+	this.moveTo(x - this.grabX, y - this.grabY);
+}
+
 /**
  * ListBox gadget.
  */
@@ -1187,14 +1207,57 @@ CanvasUI.ListBox.prototype.drawBackground = function(gfx) {
 	
 	var rect = this.getClientRect();
 	var itemHeight = (parseInt(gfx.fontSize) + this.spacing);
+	var itemY = rect.y;
+	var itemX = rect.x;
+	var itemWidth = rect.width;
+	var itemHeight = this.itemHeight;
 	
 	for (var i = 0; i < this.options.length; ++i) {
-		var itemRect = new CanvasUI.Rectangle(0, rect.y + (itemHeight * i), this.rect.width, (parseInt(gfx.fontSize) + this.spacing));
-		gfx.fillRect(itemRect, this.shineColour);
-		gfx.fillText(this.options[i].text, itemRect.x + this.spacing, itemRect.y + itemHeight - (this.spacing / 2), this.shadowColour);
+		var itemRect = new CanvasUI.Rectangle(rect.x, itemY - this.viewY, itemWidth, itemHeight);
+		
+		if (!this.options[i].selected) {
+			gfx.fillRect(itemRect, this.shineColour);
+		} else {
+			gfx.fillRect(itemRect, '#aaf');
+		}
+		
+		gfx.fillText(this.options[i].text, rect.x, rect.y + itemRect.y + this.itemHeight - (this.itemHeight / 2), this.shadowColour);
+		
+		itemY += this.itemHeight;
 	}
+}
+
+CanvasUI.ListBox.prototype.drawBorder = function(gfx) {
+	var drawRect = new CanvasUI.Rectangle(0, 0, this.rect.width, this.rect.height);
+	gfx.drawBevelledRect(drawRect, this.shineColour, this.shadowColour);
 }
 
 CanvasUI.ListBox.prototype.addOption = function(text, value) {
 	this.options.push(new CanvasUI.ListBoxOption(text, value));
+}
+
+CanvasUI.ListBox.prototype.onDrag = function(x, y, dx, dy) {
+	this.viewY -= dy;
+	if (this.viewY < 0) this.viewY = 0;
+	
+	var rect = this.getClientRect();
+	var maxY = (this.itemHeight * this.options.length) - rect.height;
+	//alert(maxY);
+	if (this.viewY > maxY) this.viewY = maxY;
+	this.draw();
+}
+
+CanvasUI.ListBox.prototype.onClick = function(x, y) {
+	this.dragged = true;
+	
+	// Locate the clicked item
+	var localY = (y - this.getY()) + this.viewY;
+	
+	// Adjust for border size
+	var rect = this.getClientRect();
+	localY -= rect.y;
+	
+	var index = Math.floor(localY / this.itemHeight);
+	
+	this.options[index].selected = !this.options[index].selected;
 }
