@@ -106,6 +106,7 @@ var CanvasUI = {
 		this.handleDragEvent = function(gadget, x, y, dx, dy) { }
 		this.handleFocusEvent = function(gadget) { }
 		this.handleBlurEvent = function(gadget) { }
+		this.handleValueChangeEvent = function(gadget) { }
 	},
 	
 	/**
@@ -214,9 +215,24 @@ var CanvasUI = {
 	},
 	
 	/**
-	 * Clickable button that displays text.
+	 * Clickable button that closes its containing window.
 	 */
 	WindowCloseButton: function(x, y, width, height) {
+
+		// Call base constructor
+		CanvasUI.Gadget.prototype.constructor.call(this, x, y, width, height);
+		
+		this.draggable = false;
+		this.borderSize.top = 1;
+		this.borderSize.right = 1;
+		this.borderSize.bottom = 1;
+		this.borderSize.left = 1;
+	},
+	
+	/**
+	 * Clickable button that moves its containing window to the back.
+	 */
+	WindowDepthButton: function(x, y, width, height) {
 
 		// Call base constructor
 		CanvasUI.Gadget.prototype.constructor.call(this, x, y, width, height);
@@ -251,6 +267,16 @@ var CanvasUI = {
 			gadget.parent.close();
 		}
 		closeButton.eventHandlers.addHandler(eventHandler);
+		
+		var depthButton = new CanvasUI.WindowDepthButton(this.rect.width - this.borderSize.top, 0, this.borderSize.top, this.borderSize.top);
+		this.children.add(depthButton);
+		
+		// Define event handler for depth button
+		eventHandler = new CanvasUI.GadgetEventHandler();
+		eventHandler.handleReleaseEvent = function(gadget, x, y) {
+			gadget.parent.lowerToBottom();
+		}
+		depthButton.eventHandlers.addHandler(eventHandler);
 	},
 	
 	ListBox: function(x, y, width, height) {
@@ -463,11 +489,34 @@ CanvasUI.GadgetEventHandlerList.prototype.raiseBlurEvent = function() {
 }
 
 /**
+ * Raise a value change event to to all handlers in the list.
+ */
+CanvasUI.GadgetEventHandlerList.prototype.raiseValueChangeEvent = function() {
+	for (var i in this.list) {
+		this.list[i].handleValueChangeEvent(this.owningGadget);
+	}
+}
+
+/**
  * Add a gadget to the collection.
  */
 CanvasUI.GadgetCollection.prototype.add = function(gadget) {
 	gadget.parent = this.gadget;
 	this.list.push(gadget);
+	
+	// Rebuild the display tree of the gadget
+	if (this.gadget != null) {
+		if (this.gadget.getDisplayManager() != null) {
+			this.gadget.getDisplayManager().repartitionTree(this.gadget);
+		}
+	}
+	
+	gadget.draw();
+}
+
+CanvasUI.GadgetCollection.prototype.insert = function(gadget) {
+	gadget.parent = this.gadget;
+	this.list.splice(0, 0, gadget);
 	
 	// Rebuild the display tree of the gadget
 	if (this.gadget != null) {
@@ -518,6 +567,17 @@ CanvasUI.GadgetCollection.prototype.raiseToTop = function(gadget) {
 	if (index > -1) {
 		this.list.splice(index, 1);
 		this.add(gadget);
+	}
+}
+
+/**
+ * Lower the specified gadget to the bottom (ie. start) of the collection.
+ */
+CanvasUI.GadgetCollection.prototype.lowerToBottom = function(gadget) {
+	var index = this.getGadgetIndex(gadget);
+	if (index > -1) {
+		this.list.splice(index, 1);
+		this.insert(gadget)
 	}
 }
 		
@@ -1035,6 +1095,18 @@ CanvasUI.Gadget.prototype.raiseChildToTop = function(child) {
 	this.children.raiseToTop(child);
 }
 
+CanvasUI.Gadget.prototype.lowerToBottom = function() {
+	if (this.parent != null) {
+		this.hide();
+		this.parent.lowerChildToBottom(this);
+		this.show();
+	}
+}
+
+CanvasUI.Gadget.prototype.lowerChildToBottom = function(child) {
+	this.children.lowerToBottom(child);
+}
+
 /**
  * Top level gadget.
  */
@@ -1100,9 +1172,6 @@ CanvasUI.WindowCloseButton.prototype.constructor = CanvasUI.WindowCloseButton;
 CanvasUI.WindowCloseButton.prototype.drawBackground = function(gfx) {
 	var drawRect = new CanvasUI.Rectangle(0, 0, this.rect.width, this.rect.height);
 	
-	var textX = (this.rect.width - gfx.getTextWidth(this.text)) / 2;
-	var textY = this.rect.height - (parseInt(gfx.fontSize) / 2);
-	
 	var colour = this.parent.focused ? '#aaf' : '#ddf';
 	colour = this.parent.dragged ? '#88f' : colour;
 	
@@ -1124,6 +1193,40 @@ CanvasUI.WindowCloseButton.prototype.drawBorder = function(gfx) {
 		gfx.drawBevelledRect(drawRect, this.shineColour, this.shadowColour);
 	}
 }
+
+/**
+ * Window depth button.
+ */
+CanvasUI.WindowDepthButton.prototype = new CanvasUI.Gadget;
+
+CanvasUI.WindowDepthButton.prototype.constructor = CanvasUI.WindowDepthButton;
+
+CanvasUI.WindowDepthButton.prototype.drawBackground = function(gfx) {
+	var drawRect = new CanvasUI.Rectangle(0, 0, this.rect.width, this.rect.height);
+	
+	var colour = this.parent.focused ? '#aaf' : '#ddf';
+	colour = this.parent.dragged ? '#88f' : colour;
+	
+	gfx.fillRect(drawRect, colour);
+	gfx.fillRect(drawRect, colour);
+	var quarterWidth = (this.rect.height / 4);
+	var quarterHeight = (this.rect.height / 4);
+	var glyphWidth = (this.rect.width / 3);
+	var glyphHeight = (this.rect.height / 3);
+	gfx.drawRect(new CanvasUI.Rectangle(quarterWidth, quarterHeight, glyphWidth, glyphHeight), this.shadowColour);
+	gfx.drawRect(new CanvasUI.Rectangle(quarterWidth * 1.5, quarterHeight * 1.5, glyphWidth, glyphHeight), this.shadowColour);
+}
+
+CanvasUI.WindowDepthButton.prototype.drawBorder = function(gfx) {
+	var drawRect = new CanvasUI.Rectangle(0, 0, this.rect.width, this.rect.height);
+	
+	if (this.clicked) {
+		gfx.drawBevelledRect(drawRect, this.shadowColour, this.shineColour);
+	} else {
+		gfx.drawBevelledRect(drawRect, this.shineColour, this.shadowColour);
+	}
+}
+
 
 
 /**
@@ -1250,14 +1353,18 @@ CanvasUI.ListBox.prototype.onDrag = function(x, y, dx, dy) {
 CanvasUI.ListBox.prototype.onClick = function(x, y) {
 	this.dragged = true;
 	
-	// Locate the clicked item
+	// Get the click y co-ord relative to the gadget
 	var localY = (y - this.getY()) + this.viewY;
 	
 	// Adjust for border size
 	var rect = this.getClientRect();
 	localY -= rect.y;
 	
+	// Get the index of the clicked item
 	var index = Math.floor(localY / this.itemHeight);
 	
+	// Toggle the item's selected state
 	this.options[index].selected = !this.options[index].selected;
+	
+	this.eventHandlers.raiseValueChangeEvent();
 }
