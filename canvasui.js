@@ -1263,7 +1263,9 @@ CanvasUI.Window.prototype.drawBorder = function(gfx) {
 	// Draw top
 	gfx.fillRect(titleRect, borderColour);
 	var fontHeight = parseInt(gfx.fontSize);
-	gfx.fillText(this.title, ((this.getWidth() - this.children.at(0).getWidth() - gfx.getTextWidth(this.title)) / 2) + this.children.at(0).getWidth(), this.borderSize.top - (fontHeight / 2), this.shadowColour);
+	var titleX = ((this.getWidth() - this.children.at(0).getWidth() - this.children.at(1).getWidth() - gfx.getTextWidth(this.title)) / 2) + this.children.at(0).getWidth();
+	var titleY = this.borderSize.top - (fontHeight / 2);
+	gfx.fillText(this.title, titleX, titleY, this.shadowColour);
 	
 	// Draw bottom
 	gfx.fillRect(bottomRect, borderColour);
