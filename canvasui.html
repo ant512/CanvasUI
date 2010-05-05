@@ -36,7 +36,6 @@ function init(canvasId) {
 	var eventHandler = new CanvasUI.GadgetEventHandler();
 	eventHandler.handleReleaseEvent = function(gadget, x, y) {
 		alert('Released ' + gadget.text);
-		gadget.parent.children.add(new CanvasUI.Button("new", 30, 30, 30, 30));
 	}
 	window3button1.eventHandlers.addHandler(eventHandler);
 	window3button2.eventHandlers.addHandler(eventHandler);
