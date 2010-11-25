@@ -412,6 +412,15 @@ CanvasUI.Rectangle.prototype.contains = function(x, y) {
 			(y < this.y + this.height));
 }
 
+/**
+ * Splits the rect argment into the area that overlaps this rect (this is
+ * the return value) and an array of areas that do not overlap (this is the
+ * remainderRects argument, which must be passed as an empty array).
+ * @param rect The rectangle to intersect with this.
+ * @param remainderRects An empty array that will be populated with the areas
+ * of the rect parameter that do not intersect with this rect.
+ * @return The intersection of this rectangle and the rect argument.
+ */
 CanvasUI.Rectangle.prototype.splitIntersection = function(rect, remainderRects) {
 
 	if (!this.intersects(rect)) return null;
