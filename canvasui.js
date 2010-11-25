@@ -300,6 +300,192 @@ var CanvasUI = {
 	}
 }
 
+
+
+/** Rect Methods **/
+
+/**
+ * Gets the co-ordinate of the rectangle's right edge.
+ * @return The co-ordinate of the rectangle's right edge.
+ */
+CanvasUI.Rectangle.prototype.getX2 = function() {
+	return this.x + this.width - 1;
+}
+
+/**
+ * Gets the co-ordinate of the rectangle's bottom edge.
+ * @return The co-ordinate of the rectangle's bottom edge.
+ */
+CanvasUI.Rectangle.prototype.getY2 = function() {
+	return this.y + this.height - 1;
+}
+
+/**
+ * Gets the intersect of this rectangle with the supplied argument.
+ * @param rect The rectangle to intersect with this.
+ * @return A rectangle that represents the intersection of the two rectangles.
+ */
+CanvasUI.Rectangle.prototype.getIntersect = function(rect) {
+	var x1 = this.x > rect.x ? this.x : rect.x;
+	var y1 = this.y > rect.y ? this.y : rect.y;
+
+	var x2 = this.getX2() < rect.getX2() ? this.getX2() : rect.getX2();
+	var y2 = this.getY2() < rect.getY2() ? this.getY2() : rect.getY2();
+
+	return new CanvasUI.Rectangle(x1, y1, x2 - x1 + 1, y2 - y1 + 1);
+}
+
+/**
+ * Gets the smallest rectangle capable of containing this rect and the supplied
+ * argument.
+ * @param rect The rectangle to add to this.
+ * @return The smallest rectangle that can contain this rect and the argument.
+ */
+CanvasUI.Rectangle.prototype.getAddition = function(rect) {
+	var x1 = x < rect.x ? this.x : rect.x;
+	var y1 = y < rect.y ? this.y : rect.x;
+
+	var x2 = this.getX2() > rect.getX2() ? this.getX2() : rect.getX2();
+	var y2 = this.getY2() > rect.getY2() ? this.getY2() : rect.getY2();
+
+	return new CanvasUI.Rectangle(x1, y1, x2 - x1 + 1, y2 - y1 + 1);
+}
+
+/**
+ * Clips this rectangle to the intersection with the supplied argument.
+ * @param rect The rectangle to clip to.
+ */
+CanvasUI.Rectangle.prototype.clipToIntersect = function(rect) {
+	var clipped = this.getIntersect(rect);
+
+	this.x = clipped.x;
+	this.y = clipped.y;
+	this.width = clipped.width;
+	this.height = clipped.height;
+}
+
+/**
+ * Increases the size of the rect to encompass the supplied argument.
+ * @param rect The rect to encompass.
+ */
+CanvasUI.Rectangle.prototype.expandToInclude = function(rect) {
+	var addition = getAddition(rect);
+
+	this.x = addition.x;
+	this.y = addition.y;
+	this.width = addition.width;
+	this.height = addition.height;
+}
+
+/**
+ * Check if the rectangle has valid dimensions.
+ * @return True if the rectangle has valid dimensions.
+ */
+CanvasUI.Rectangle.prototype.hasDimensions = function() {
+	if (this.width < 1) return false;
+	if (this.height < 1) return false;
+	return true;
+}
+
+/**
+ * Check if this rectangle intersects the argument.
+ * @param rect The rect to check for an intersection.
+ * @return True if the rects intersect.
+ */
+CanvasUI.Rectangle.prototype.intersects = function(rect) {
+	return ((this.x + this.width > rect.x) &&
+			(this.y + this.height > rect.y) &&
+			(this.x < rect.x + rect.width) &&
+			(this.y < rect.y + rect.height));
+}
+
+/**
+ * Check if this rectangle contains the argument co-ordinate.
+ * @param x The x co-ordinate to check.
+ * @param y The y co-ordinate to check.
+ * @return True if this rect contains the argument co-ordinate.
+ */
+CanvasUI.Rectangle.prototype.contains = function(x, y) {
+	return ((x >= this.x) &&
+			(y >= this.y) &&
+			(x < this.x + this.width) &&
+			(y < this.y + this.height));
+}
+
+CanvasUI.Rectangle.prototype.splitIntersection = function(rect, remainderRects) {
+
+	if (!this.intersects(rect)) return null;
+
+	// Copy the properties of rect into intersection; we trim this to size later
+	var intersection = new CanvasUI.Rectangle(rect.x, rect.y, rect.width, rect.height);
+
+	// Check for a non-overlapped rect on the left
+	if (intersection.x < this.x) {
+		var left = new CanvasUI.Rectangle(0, 0, 0, 0);
+		left.x = intersection.x;
+		left.y = intersection.y;
+		left.width = this.x - intersection.x;
+		left.height = intersection.height;
+		
+		// Insert the rect
+		remainderRects.push(left);
+		
+		// Adjust the dimensions of the intersection
+		intersection.x = x;
+		intersection.width -= left.width;
+	}
+	
+	// Check for a non-overlapped rect on the right
+	if (intersection.x + intersection.width > this.x + this.width) {
+		var right = new CanvasUI.Rectangle(0, 0, 0, 0);
+		right.x = this.x + this.width;
+		right.y = intersection.y;
+		right.width = intersection.width - (this.x + this.width - intersection.x);
+		right.height = intersection.height;
+		
+		// Insert the rect
+		remainderRects.push(right);
+		
+		// Adjust dimensions of the intersection
+		intersection.width -= right.width;
+	}
+	
+	// Check for a non-overlapped rect above
+	if (intersection.y < this.y) {
+		var top = new CanvasUI.Rectangle(0, 0, 0, 0);
+		top.x = intersection.x;
+		top.y = intersection.y;
+		top.width = intersection.width;
+		top.height = this.y - intersection.y;
+		
+		// Insert the rect
+		remainderRects.push(top);
+		
+		// Adjust the dimensions of the intersection
+		intersection.y = this.y;
+		intersection.height -= top.height;
+	}
+	
+	// Check for a non-overlapped rect below
+	if (intersection.y + intersection.height > this.y + this.height) {
+		var bottom = new CanvasUI.Rectangle(0, 0, 0, 0);
+		bottom.x = intersection.x;
+		bottom.y = this.y + this.height;
+		bottom.width = intersection.width;
+		bottom.height = intersection.height - (this.y + this.height - intersection.y);
+		
+		// Insert the rect
+		remainderRects.push(bottom);
+		
+		// Adjust dimensions of the intersection
+		intersection.height -= bottom.height;
+	}
+	
+	return intersection;
+}
+
+
+
 CanvasUI.Graphics.prototype.drawBevelledRect = function(rect, lightColour, darkColour) {
 	if (this.context == null) return;
 	
