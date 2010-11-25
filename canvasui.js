@@ -30,25 +30,6 @@ var CanvasUI = {
 	},
 		
 	/**
-	 * Node in the binary display tree.
-	 */
-	DisplayNode: function(rect, left, right, gadget) {
-		this.rect = rect;
-		this.left = left;
-		this.right = right;
-		this.gadget = gadget;
-	},
-		
-	/**
-	 * Builds a scene graph of the specified gadget using a BSP tree.
-	 */
-	DisplayTree: function(gadget) {
-		this.topNode = null;
-		this.leaves = new Array();
-		this.owningGadget = gadget;
-	},
-		
-	/**
 	 * Rectangle class.
 	 */
 	Rectangle: function(x, y, width, height) {
@@ -75,22 +56,14 @@ var CanvasUI = {
 	},
 
 	/**
-	 * Controls the BSP tree that describes the layout of clipping regions on
-	 * the canvas.
-	 */
-	DisplayManager: function(gadget) {
-		this.tree = null;
-		this.topLevelGadget = gadget;
-	},
-
-	/**
 	 * Graphics class for drawing to canvas.
 	 */
-	Graphics: function(gadget) {
-		this.owningGadget = gadget;
-		this.canvas = gadget.getCanvas();
+	Graphics: function(x, y, canvas, clipRect) {
+		this.x = x;
+		this.y = y;
+		this.clipRect = clipRect;
+		this.canvas = canvas;
 		this.context = this.canvas == null ? null : this.canvas.getContext("2d");
-		this.displayManager = gadget.getDisplayManager();
 		this.fontSize = "12px";
 		this.fontFamily = "sans-serif";
 	},
@@ -120,6 +93,16 @@ var CanvasUI = {
 	},
 	
 	/**
+	 * Manages the list of damaged rectangles.
+	 * @param gadget This should always be the top-level gadget.
+	 */
+	DamagedRectManager: function(gadget) {
+		this.gadget = gadget;
+		this.damagedRects = new Array();
+	},
+	 
+	
+	/**
 	 * Top-level gadget that contains the rest of the UI.  An instance of this
 	 * should be created in order to create a UI.
 	 */
@@ -140,6 +123,8 @@ var CanvasUI = {
 			
 			this.oldMouseX = x;
 			this.oldMouseY = y;
+			
+			this.damagedRectManager.redraw();
 		}
 
 		/**
@@ -155,6 +140,8 @@ var CanvasUI = {
 			
 			this.oldMouseX = -1;
 			this.oldMouseY = -1;
+			
+			this.damagedRectManager.redraw();
 		}
 		
 		/**
@@ -170,20 +157,22 @@ var CanvasUI = {
 			
 			this.oldMouseX = x;
 			this.oldMouseY = y;
+			
+			this.damagedRectManager.redraw();
 		}
 		
 		// Set member values
 		this.draggable = false;
-		this.visible = false;
 		
 		this.canvas = canvas;			// Drawing space
 		this.topLevelGadget = null;		// Toplevel gadget
 		this.clickedGadget = null;		// Currently clicked gadget
 		this.focusedGadget = null;		// Currently focused gadget
-		this.displayManager = null;		// Manages the clipping rects
 
 		this.oldMouseX = -1;			// Last observed mouse position
 		this.oldMouseY = -1;			// Last observed mouse position
+		
+		this.damagedRectManager = new CanvasUI.DamagedRectManager(this);
 		
 		// Grab a pointer to the canvas and set up event handlers
 		var obj = this;
@@ -191,10 +180,6 @@ var CanvasUI = {
 		this.canvas.addEventListener("mouseup", function(e) { obj.handleRelease(e); }, false);
 		this.canvas.addEventListener("mouseout", function(e) { obj.handleRelease(e); }, false);
 		this.canvas.addEventListener("mousemove", function(e) { obj.handleDrag(e); }, false);
-
-		// Set up the clip rect manager
-		this.displayManager = new CanvasUI.DisplayManager(this);
-		this.displayManager.createTree();
 	},
 	
 	/**
@@ -300,6 +285,110 @@ var CanvasUI = {
 	}
 }
 
+
+
+/** DamagedRectManager Methods **/
+
+/**
+ * Add a damaged rect to the list.  The method automatically clips and splits
+ * the rect to ensure that only new regions are added to the list.
+ * @param rect The rect to add to the list.
+ */
+CanvasUI.DamagedRectManager.prototype.addDamagedRect = function(rect) {
+	var newRects = new Array();
+	var remainingRects = new Array();
+
+	newRects.push(rect);
+
+	// Ensure that the new rect does not overlap any existing rects - we only
+	// want to draw each region once
+	for (var i = 0; i < this.damagedRects.length; ++i) {
+		for (var j = 0; j < newRects.length; ++j) {
+		
+			var intersection = this.damagedRects[i].splitIntersection(newRects[j], remainingRects);
+
+			if (intersection) {
+			
+				// Intersection contains the part of the new rect that is already known to be damaged
+				// and can be discarded.  remainingRects contains the rects that still need to be examined
+				newRects.splice(j, 1);
+				j--;
+
+				// Insert non-overlapping rects to the front of the array so that they are not
+				// examined again for this particular damaged rect
+				for (var k = 0; k < remainingRects.length; ++k) {
+					newRects.unshift(remainingRects[k]);
+					j++;
+				}
+
+				remainingRects = new Array();
+			}
+		}
+	}
+
+	// Add any non-overlapping rects into the damaged rect array
+	for (var i = 0; i < newRects.length; ++i) {
+		this.damagedRects.push(newRects[i]);
+	}
+}
+
+/**
+ * Redraws all damaged rects.
+ */
+CanvasUI.DamagedRectManager.prototype.redraw = function(rect) {
+	this.drawRects(this.gadget, this.damagedRects);
+}
+
+CanvasUI.DamagedRectManager.prototype.drawRects = function(gadget, damagedRects) {
+
+	if (!gadget.isVisible()) return;
+
+	var gadgetRect = gadget.getRectClippedToHierarchy();
+	
+	var remainingRects = new Array();
+	var subRects = new Array();
+	
+	// Work out which of the damaged rects collide with the current gadget
+	for (var i = 0; i < damagedRects.length; ++i) {
+		var damagedRect = damagedRects[i];
+		
+		// Work out which part of the damaged rect intersects the current gadget
+		var intersection = gadgetRect.splitIntersection(damagedRect, remainingRects);
+		
+		if (intersection) {
+			damagedRects.splice(i, 1);
+			i--;
+			
+			// Add the non-intersecting parts of the damaged rect back into the
+			// list of undrawn rects
+			for (var j = 0; j < remainingRects.length; ++j) {
+				damagedRects.unshift(remainingRects[j]);
+				i++;
+			}
+			
+			remainingRects = new Array();
+			
+			// Get children to draw all parts of themselves that intersect the
+			// intersection we've found.
+			subRects.push(intersection);
+			
+			for (var j = gadget.children.length() - 1; j >= 0; --j) {
+				this.drawRects(gadget.children.at(j), subRects);
+				
+				// Abort if all rects have been drawn
+				if (subRects.length == 0) break;
+			}
+			
+			// Children have drawn themselves; anything left in the subRects
+			// array must overlap this gadget
+			for (var j = 0; j < subRects.length; ++j) {
+				gadget.draw(subRects[j]);
+			}
+			
+			subRects = new Array();
+		}
+	}
+}
 
 
 /** Rect Methods **/
@@ -440,7 +529,7 @@ CanvasUI.Rectangle.prototype.splitIntersection = function(rect, remainderRects) 
 		remainderRects.push(left);
 		
 		// Adjust the dimensions of the intersection
-		intersection.x = x;
+		intersection.x = this.x;
 		intersection.width -= left.width;
 	}
 	
@@ -506,34 +595,32 @@ CanvasUI.Graphics.prototype.drawBevelledRect = function(rect, lightColour, darkC
 			
 CanvasUI.Graphics.prototype.drawRect = function(rect, colour) {
 	if (this.context == null) return;
+		
+	// Compensate for graphics offset
+	var x = rect.x + this.x;
+	var y = rect.y + this.y;
+
+	this.context.save();
+	this.context.beginPath();
+	this.context.rect(this.clipRect.x, this.clipRect.y, this.clipRect.width, this.clipRect.height);
+	this.context.clip();
 	
-	for (var i = 0; i < this.displayManager.tree.leaves.length; ++i) {
-		if (this.displayManager.tree.leaves[i].gadget == this.owningGadget) {
-			this.drawClippedRect(rect, colour, this.displayManager.tree.leaves[i].rect);
-		}
-	}
+	this.context.strokeStyle = colour;
+	this.context.strokeRect(x, y, rect.width, rect.height);
+	this.context.closePath();
+	this.context.restore();
 }
 
 CanvasUI.Graphics.prototype.fillText = function(text, x, y, colour) {
 	if (this.context == null) return;
-	
-	for (var i = 0; i < this.displayManager.getLeaves().length; ++i) {
-		if (this.displayManager.getLeaves()[i].gadget == this.owningGadget) {
-			this.fillClippedText(text, x, y, colour, this.displayManager.getLeaves()[i].rect);
-		}
-	}
-}
 		
-CanvasUI.Graphics.prototype.fillClippedText = function(text, x, y, colour, clipRect) {
-	if (this.context == null) return;
-		
-	// Compensate for gadget offset
-	x += this.owningGadget.getX();
-	y += this.owningGadget.getY();
+	// Compensate for graphics offset
+	x += this.x;
+	y += this.y;
 
 	this.context.save();
 	this.context.beginPath();
-	this.context.rect(clipRect.x, clipRect.y, clipRect.width, clipRect.height);
+	this.context.rect(this.clipRect.x, this.clipRect.y, this.clipRect.width, this.clipRect.height);
 	this.context.clip();
 	
 	this.context.fillStyle = colour;
@@ -554,34 +641,16 @@ CanvasUI.Graphics.prototype.getTextWidth = function(text) {
 	return width;
 }
 	
-CanvasUI.Graphics.prototype.drawClippedRect = function(rect, colour, clipRect) {
+CanvasUI.Graphics.prototype.fillRect = function(rect, colour) {
 	if (this.context == null) return;
-		
-	// Compensate for gadget offset
-	var x = rect.x + this.owningGadget.getX();
-	var y = rect.y + this.owningGadget.getY();
-
-	this.context.save();
-	this.context.beginPath();
-	this.context.rect(clipRect.x, clipRect.y, clipRect.width, clipRect.height);
-	this.context.clip();
 	
-	this.context.strokeStyle = colour;
-	this.context.strokeRect(x, y, rect.width, rect.height);
-	this.context.closePath();
-	this.context.restore();
-}
-		
-CanvasUI.Graphics.prototype.fillClippedRect = function(rect, colour, clipRect) {
-	if (this.context == null) return;
-		
-	// Compensate for gadget offset
-	var x = rect.x + this.owningGadget.getX();
-	var y = rect.y + this.owningGadget.getY();
+	// Compensate for graphics offset
+	var x = rect.x + this.x;
+	var y = rect.y + this.y;
 
 	this.context.save();
 	this.context.beginPath();
-	this.context.rect(clipRect.x, clipRect.y, clipRect.width, clipRect.height);
+	this.context.rect(this.clipRect.x, this.clipRect.y, this.clipRect.width, this.clipRect.height);
 	this.context.clip();
 	
 	this.context.fillStyle = colour;
@@ -589,29 +658,7 @@ CanvasUI.Graphics.prototype.fillClippedRect = function(rect, colour, clipRect) {
 	this.context.closePath();
 	this.context.restore();
 }
-		
-CanvasUI.Graphics.prototype.fillRect = function(rect, colour) {
-	if (this.context == null) return;
-	
-	for (var i = 0; i < this.displayManager.getLeaves().length; ++i) {
-		if (this.displayManager.getLeaves()[i].gadget == this.owningGadget) {
-			this.fillClippedRect(rect, colour, this.displayManager.getLeaves()[i].rect);
-		}
-	}
-}
 
-CanvasUI.DisplayManager.prototype.createTree = function() {
-	this.tree = new CanvasUI.DisplayTree(this.topLevelGadget);
-	this.tree.createTree();
-}
-
-CanvasUI.DisplayManager.prototype.repartitionTree = function(gadget) {
-	this.tree.repartition(gadget, null);
-}
-
-CanvasUI.DisplayManager.prototype.getLeaves = function() {
-	return this.tree.leaves;
-}
 
 /**
  * Add a gadget event handler to the list.
@@ -699,28 +746,14 @@ CanvasUI.GadgetCollection.prototype.add = function(gadget) {
 	gadget.parent = this.gadget;
 	this.list.push(gadget);
 	
-	// Rebuild the display tree of the gadget
-	if (this.gadget != null) {
-		if (this.gadget.getDisplayManager() != null) {
-			this.gadget.getDisplayManager().repartitionTree(this.gadget);
-		}
-	}
-	
-	gadget.draw();
+	gadget.markRectsDamaged();
 }
 
 CanvasUI.GadgetCollection.prototype.insert = function(gadget) {
 	gadget.parent = this.gadget;
 	this.list.splice(0, 0, gadget);
-	
-	// Rebuild the display tree of the gadget
-	if (this.gadget != null) {
-		if (this.gadget.getDisplayManager() != null) {
-			this.gadget.getDisplayManager().repartitionTree(this.gadget);
-		}
-	}
-	
-	gadget.draw();
+
+	gadget.markRectsDamaged();	
 }
 
 CanvasUI.GadgetCollection.prototype.remove = function(gadget) {
@@ -729,10 +762,9 @@ CanvasUI.GadgetCollection.prototype.remove = function(gadget) {
 		this.list.splice(index, 1);
 	}
 	
-	gadget.parent = null;
+	gadget.markRectsDamaged();
 	
-	this.gadget.getDisplayManager().repartitionTree(this.gadget);
-	this.gadget.draw();
+	gadget.parent = null;
 }
 		
 /**
@@ -745,14 +777,6 @@ CanvasUI.GadgetCollection.prototype.length = function() { return this.list.lengt
  */
 CanvasUI.GadgetCollection.prototype.at = function(index) { return this.list[index]; }
 		
-/**
- * Draw all items in the collection.
- */
-CanvasUI.GadgetCollection.prototype.draw = function() {
-	for (var i in this.list) {
-		this.list[i].draw();
-	}
-}
 
 /**
  * Raise the specified gadget to the top (ie. end) of the collection.
@@ -789,172 +813,8 @@ CanvasUI.GadgetCollection.prototype.getGadgetIndex = function(gadget) {
 	return -1;
 }
 
-/**
- * Create the initial tree state.
- */
-CanvasUI.DisplayTree.prototype.createTree = function() {
-	this.topNode = new CanvasUI.DisplayNode(this.owningGadget.rect, null, null, this.owningGadget);
-	this.leaves = new Array();
-	
-	this.partition(this.topNode, this.owningGadget.children.length() - 1);
-}
 
-/**
- * Remove the dead leaves from the leaf array.  A leaf is considered
- * dead if it belongs to the gadget being repartitioned, or
- * the gadget it belongs to is a child of the repartitioned gadget.
- */
-CanvasUI.DisplayTree.prototype.removeDeadLeaves = function(gadget) {
-
-	var i = 0;
-	while (i < this.leaves.length) {
-		var leafGadget = this.leaves[i].gadget;
-		
-		// Check the leaf's gadget and that gadget's ancestors to see
-		// if the leaf is affected by the repartition.  If so, remove
-		// the leaf
-		while (leafGadget != null) {
-			if (leafGadget == gadget) {
-			
-				// Leaf affected by partition, so remove it
-				this.leaves.splice(i, 1);
-				break;
-			}
-			
-			leafGadget = leafGadget.parent;
-		}
-	
-		// Advance to next leaf if we did not remove one
-		if (leafGadget == null) {
-			++i;
-		}
-	}
-}
-
-/**
- * Recalculate the tree for a given gadget.
- */
-CanvasUI.DisplayTree.prototype.repartition = function(gadget, node) {
-
-	// Special case - gadget is topmost gadget, in which case recreate tree
-	if (gadget == null) {
-		this.createTree();
-		return;
-	}
-	
-	// Obtain the top node if not specified
-	if (node == null) {
-		node = this.topNode;
-		
-		this.removeDeadLeaves(gadget);
-	}
-	
-	// If this node contains the gadget, repartition it
-	if (node.gadget == gadget) {
-		node.left = null;
-		node.right = null;
-		this.partition(node, gadget.children.length() - 1);
-		return;
-	}
-
-	// This node does not contain the gadget, so recurse into children
-	if (node.left != null) this.repartition(gadget, node.left);
-	if (node.right != null) this.repartition(gadget, node.right);
-}
-
-CanvasUI.DisplayTree.prototype.partition = function(node, childIndex) {
-
-	// Guard against empty nodes
-	if ((node.rect.width == 0) || (node.rect.height == 0)) return;
-
-	var child = null;
-	
-	var childX1;
-	var childX2;
-	var childY1;
-	var childY2;
-
-	while ((node.left == null) && (childIndex > -1)) {
-		
-		// Ignore any invisible children
-		do {
-			child = node.gadget.children.at(childIndex);
-			
-			if (!child.visible) childIndex--;
-		} while ((!child.visible) && (childIndex > -1));
-	
-		// Calculate child co-ords
-		childX1 = child.getX();
-		childY1 = child.getY();
-		childX2 = childX1 + child.getWidth() - 1;
-		childY2 = childY1 + child.getHeight() -1;
-		
-		// Attempt to partition the node
-		if ((childX1 > node.rect.x) && (childX1 < node.rect.x + node.rect.width - 1)) {
-			// Partition at left edge
-			this.horizSplit(node, childX1 - 1);
-		
-		} else if ((childX2 >= node.rect.x) && (childX2 < node.rect.x + node.rect.width - 1)) {
-			// Partition at right edge
-			this.horizSplit(node, childX2);
-
-		} else if ((childX1 <= node.rect.x) && (childX2 >= node.rect.x + node.rect.width - 1)) {
-			// Attempt to partition vertically only if the child intersects the node
-		
-			if ((childY1 > node.rect.y) && (childY1 < node.rect.y + node.rect.height - 1)) {
-				// Partition at top edge
-				this.vertSplit(node, childY1 - 1);
-			
-			} else if ((childY2 >= node.rect.y) && (childY2 < node.rect.y + node.rect.height - 1)) {
-				// Partition at bottom edge
-				this.vertSplit(node, childY2);
-			
-			} else if ((childY1 <= node.rect.y) && (childY2 >= node.rect.y + node.rect.height - 1)) {
-				
-				// Node is totally surrounded by the child gadget
-				node.gadget = child;
-			
-				this.partition(node, child.children.length() - 1);
-				return;
-			}
-		}
-	
-		// Move to the next child if no partitioning has taken place
-		if (node.left == null) childIndex--;
-	}
-
-	// Attempt to partition any newly-created subnodes
-	if (node.left != null) {
-	
-		// Continue partitioning
-		this.partition(node.left, childIndex);
-		this.partition(node.right, childIndex);
-	} else {
-		this.leaves.push(node);
-	}
-}
-
-CanvasUI.DisplayTree.prototype.horizSplit = function(node, x) {
-
-	// Create left split
-	var leftRect = new CanvasUI.Rectangle(node.rect.x, node.rect.y, (x - node.rect.x) + 1, node.rect.height);
-	node.left = new CanvasUI.DisplayNode(leftRect, null, null, node.gadget);
-
-	// Create right split
-	var rightRect = new CanvasUI.Rectangle(x + 1, node.rect.y, node.rect.width - leftRect.width, node.rect.height);
-	node.right = new CanvasUI.DisplayNode(rightRect, null, null, node.gadget);
-}
-
-CanvasUI.DisplayTree.prototype.vertSplit = function(node, y) {
-	
-	// Create top split
-	var topRect = new CanvasUI.Rectangle(node.rect.x, node.rect.y, node.rect.width, (y - node.rect.y) + 1);
-	node.left = new CanvasUI.DisplayNode(topRect, null, null, node.gadget);
-	
-	// Create bottom split
-	var bottomRect = new CanvasUI.Rectangle(node.rect.x, y + 1, node.rect.width, node.rect.height - topRect.height);
-	node.right = new CanvasUI.DisplayNode(bottomRect, null, null, node.gadget);
-}
+/** Gadget Methods **/
 
 CanvasUI.Gadget.prototype.init = function(x, y, width, height) {
 	this.rect = new CanvasUI.Rectangle(x, y, width, height);
@@ -998,27 +858,122 @@ CanvasUI.Gadget.prototype.getClientRect = function() {
 	return new CanvasUI.Rectangle(x, y, width, height);
 }
 
+CanvasUI.Gadget.prototype.getRectClippedToHierarchy = function() {
+
+	var rect = new CanvasUI.Rectangle(this.getX(), this.getY(), this.getWidth(), this.getHeight());
+
+	var parent = this.parent;
+	var gadget = this;
+
+	while (parent) {
+
+		// Copy parent's properties into the rect
+		var parentRect = parent.getClientRect();
+
+		// Adjust rect to screen space
+		parentRect.x += parent.getX();
+		parentRect.y += parent.getY();
+
+		rect.clipToIntersect(parentRect);
+
+		// Send up to parent
+		gadget = parent;
+		parent = parent.parent;
+	}
+	
+	return rect;
+}
+
 CanvasUI.Gadget.prototype.isVisible = function() {
 	if (!this.visible) return false;
-	if (this.parent == null) return this.visible;
+	if (!this.parent) return this.visible;
 	return (this.parent.isVisible());
 }
 
 CanvasUI.Gadget.prototype.isEnabled = function() {
 	if (!this.enabled) return false;
-	if (this.parent == null) return this.enabled;
+	if (!this.parent) return this.enabled;
 	return (this.parent.isEnabled());
 }
 
-CanvasUI.Gadget.prototype.getDisplayManager = function() {
-	if (this.parent != null) return this.parent.getDisplayManager();
+CanvasUI.Gadget.prototype.getCanvas = function() {
+	if (this.parent) return this.parent.getCanvas();
 	return null;
 }
 
-CanvasUI.Gadget.prototype.getCanvas = function() {
-	if (this.parent != null) return this.parent.getCanvas();
+CanvasUI.Gadget.prototype.getDamagedRectManager = function() {
+	if (this.parent) return this.parent.getDamagedRectManager();
 	return null;
 }
+
+CanvasUI.Gadget.prototype.markRectsDamaged = function() {
+	var damagedRects = this.getVisibleRects();
+	
+	var damagedRectManager = this.getDamagedRectManager();
+
+	if (!damagedRectManager) return;
+	
+	for (var i in damagedRects) {
+		damagedRectManager.addDamagedRect(damagedRects[i]);
+	}
+	
+	damagedRectManager.redraw();
+}
+
+CanvasUI.Gadget.prototype.getVisibleRects = function() {
+	var rect = new CanvasUI.Rectangle(this.getX(), this.getY(), this.getWidth(), this.getHeight());
+
+	var visibleRects = new Array();
+	visibleRects.push(rect);
+	
+	var gadget = this;
+	var parent = this.parent;
+
+	while (parent && gadget) {
+
+		// Locate gadget in the list; we add one to the index to
+		// ensure that we deal with the next gadget up in the z-order
+		var gadgetIndex = parseInt(parent.children.getGadgetIndex(gadget)) + 1;
+
+		// Gadget should never be the bottom item on the screen
+		if (gadgetIndex > 0) {
+
+			// Remove any overlapped rectangles
+			for (var i = gadgetIndex; i < parent.children.length(); i++) {
+				for (var j = 0; j < visibleRects.length; ++j) {
+					var remainingRects = new Array();
+					
+					if (visibleRects[j].splitIntersection(parent.children.at(i).rect, remainingRects)) {
+						visibleRects.splice(j, 1);
+						j--;
+						
+						for (var k in remainingRects) {
+							visibleRects.unshift(remainingRects[k]);
+							j++;
+						}
+					}
+				}
+				
+				// Stop processing if there are no more visible rects
+				if (visibleRects.length == 0) break;
+			}
+		}
+
+		if (visibleRects.length > 0) {
+			gadget = parent;
+
+			if (parent) {
+				parent = parent.parent;
+			}
+		} else {
+			return visibleRects;
+		}
+	}
+	
+	return visibleRects;
+}
+
+	
 
 CanvasUI.Gadget.prototype.setClickedGadget = function(gadget) {
 	if (this.parent != null) this.parent.setClickedGadget(gadget);
@@ -1035,14 +990,13 @@ CanvasUI.Gadget.prototype.close = function() {
 	}
 }
 
-CanvasUI.Gadget.prototype.draw = function() {
+CanvasUI.Gadget.prototype.draw = function(rect) {
 	if (!this.isVisible()) return;
 	
-	var gfx = new CanvasUI.Graphics(this);
+	var gfx = new CanvasUI.Graphics(this.getX(), this.getY(), this.getCanvas(), rect);
 	
 	this.drawBackground(gfx);
 	this.drawBorder(gfx);
-	this.children.draw();
 }
 
 CanvasUI.Gadget.prototype.drawBackground = function(gfx) {
@@ -1108,7 +1062,7 @@ CanvasUI.Gadget.prototype.focus = function() {
 		this.parent.setFocusedGadget(this);
 	}
 	
-	this.draw();
+	this.markRectsDamaged();
 	
 	if (!hadFocus) {
 		this.eventHandlers.raiseFocusEvent();
@@ -1127,7 +1081,7 @@ CanvasUI.Gadget.prototype.blur = function() {
 		this.focusedGadget = null;
 	}
 	
-	this.draw();
+	this.markRectsDamaged();
 	
 	if (hadFocus) {
 		this.eventHandlers.raiseBlurEvent();
@@ -1165,7 +1119,7 @@ CanvasUI.Gadget.prototype.click = function(x, y) {
 	
 	this.onClick(x, y);
 	
-	this.draw();
+	this.markRectsDamaged();
 	
 	this.eventHandlers.raiseClickEvent(x, y);
 	
@@ -1182,7 +1136,7 @@ CanvasUI.Gadget.prototype.release = function(x, y) {
 		
 		if (this.getClickedGadget() == this) this.setClickedGadget(null);
 		
-		this.draw();
+		this.markRectsDamaged();
 		
 		// Released within the gadget or outside?
 		if (this.checkPointCollision(x, y)) {
@@ -1254,18 +1208,8 @@ CanvasUI.Gadget.prototype.moveTo = function(x, y) {
 CanvasUI.Gadget.prototype.hide = function() {
 	if (this.visible) {
 		this.visible = false;
-		
-		this.getDisplayManager().repartitionTree(this.parent);
-		
-		// Redraw the parent if there is one
-		if (this.parent != null) {
-			this.parent.draw();
-		} else {
-			
-			// No parent, so wipe the canvas
-			var ctx = canvas.getContext("2d");
-			ctx.fillRect(0, 0, canvas.width, canvas.height, '#FFF');
-		}
+
+		this.markRectsDamaged();
 	}
 }
 
@@ -1273,8 +1217,7 @@ CanvasUI.Gadget.prototype.show = function() {
 	if (!this.visible) {
 		this.visible = true;
 		
-		this.getDisplayManager().repartitionTree(this.parent);
-		this.draw();
+		this.markRectsDamaged();
 	}
 }
 
@@ -1313,13 +1256,15 @@ CanvasUI.Gui.prototype.drawBorder = function(gfx) { }
 
 CanvasUI.Gui.prototype.getCanvas = function() { return this.canvas; }
 
-CanvasUI.Gui.prototype.getDisplayManager = function() { return this.displayManager; }
-
 CanvasUI.Gui.prototype.setClickedGadget = function(gadget) {
 	this.clickedGadget = gadget;
 }
 
 CanvasUI.Gui.prototype.getClickedGadget = function() { return this.clickGadget; }
+
+CanvasUI.Gui.prototype.getDamagedRectManager = function() {
+	return this.damagedRectManager;
+}
 
 /**
  * Button gadget.
@@ -1544,7 +1489,7 @@ CanvasUI.ListBox.prototype.onDrag = function(x, y, dx, dy) {
 	var maxY = (this.itemHeight * this.options.length) - rect.height;
 	//alert(maxY);
 	if (this.viewY > maxY) this.viewY = maxY;
-	this.draw();
+	this.markRectsDamaged();
 }
 
 CanvasUI.ListBox.prototype.onClick = function(x, y) {
