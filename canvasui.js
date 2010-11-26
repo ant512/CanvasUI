@@ -7,8 +7,6 @@ var CanvasUI = {
 	 * Gadget class is the base class for all UI widgets.
 	 */
 	Gadget: function(x, y, width, height) {
-		this.rect = null;
-		this.children = null;
 		this.parent = null;
 		this.clicked = false;
 		this.focused = false;
@@ -16,17 +14,18 @@ var CanvasUI = {
 		this.visible = true;
 		this.enabled = true;
 		this.draggable = true;
-		this.borderSize = null;
 		this.grabX = 0;
 		this.grabY = 0;
 		this.backColour = '#eee';
 		this.shineColour = '#fff';
 		this.shadowColour = '#000';
 		this.darkColour = '#555';
-		this.eventHandlers = null;
 		this.focusedGadget = null;
 		
-		this.init(x, y, width, height);
+		this.rect = new CanvasUI.Rectangle(x, y, width, height);
+		this.children = new CanvasUI.GadgetCollection(this);
+		this.eventHandlers = new CanvasUI.GadgetEventHandlerList(this);
+		this.borderSize = new CanvasUI.BorderSize(0, 0, 0, 0);
 	},
 		
 	/**
@@ -133,15 +132,6 @@ var CanvasUI = {
 		
 		this.timer = null;				// Timer that causes the gui to run
 										// essential recurring code
-		
-		/**
-		 * Sets up a timer that ensures that the gui redraws any changes that
-		 * occur outside of click/release/drag events.
-		 */
-		this.startTimer = function() {
-			var obj= this;
-			this.timer = setTimeout(function() { obj.damagedRectManager.redraw(), 10 });
-		}
 		
 		// Start the timer
 		this.startTimer();
@@ -785,13 +775,6 @@ CanvasUI.GadgetCollection.prototype.getGadgetIndex = function(gadget) {
 
 /** Gadget Methods **/
 
-CanvasUI.Gadget.prototype.init = function(x, y, width, height) {
-	this.rect = new CanvasUI.Rectangle(x, y, width, height);
-	this.children = new CanvasUI.GadgetCollection(this);
-	this.eventHandlers = new CanvasUI.GadgetEventHandlerList(this);
-	this.borderSize = new CanvasUI.BorderSize(0, 0, 0, 0);
-}
-
 /**
  * Gets the X co-ord of the gadget relative to the top-level gadget.
  */
@@ -1281,6 +1264,15 @@ CanvasUI.Gui.prototype.handleDrag = function(e) {
 	this.oldMouseY = y;
 	
 	this.damagedRectManager.redraw();
+}
+
+/**
+ * Sets up a timer that ensures that the gui redraws any changes that
+ * occur outside of click/release/drag events.
+ */
+CanvasUI.Gui.prototype.startTimer = function() {
+	var obj = this;
+	this.timer = setTimeout(function() { obj.damagedRectManager.redraw(), 10 });
 }
 
 
