@@ -1805,7 +1805,13 @@ CanvasUI.Window.prototype.drawBorder = function(gfx) {
 	// Draw outline
 	gfx.drawBevelledRect(borderRect, this.shineColour, this.shadowColour);
 }
-		
+
+/**
+ * Called when the window is clicked.  Raises the window to the top of the stack
+ * and starts the dragging system if the top border is clicked.
+ * @param x The x co-ordinate of the click.
+ * @param y The y co-ordinate of the click.
+ */
 CanvasUI.Window.prototype.onClick = function(x, y) {
 
 	// Ensure gadget is topmost in collection
@@ -1819,6 +1825,13 @@ CanvasUI.Window.prototype.onClick = function(x, y) {
 	}
 }
 
+/**
+ * Called when the window is dragged.  Moves the window to the new co-ordinates.
+ * @param x The x co-ordinate of the drag.
+ * @param y The y co-ordinate of the drag.
+ * @param dx The x distance moved.
+ * @param dy The y distance moved.
+ */
 CanvasUI.Window.prototype.onDrag = function(x, y, dx, dy) {
 	this.moveTo(x - this.grabX, y - this.grabY);
 }
@@ -1869,10 +1882,22 @@ CanvasUI.ListBox.prototype.drawBorder = function(gfx) {
 	gfx.drawBevelledRect(drawRect, this.shineColour, this.shadowColour);
 }
 
+/**
+ * Add a new option to the listbox.
+ * @param text The option text.
+ * @param value The option value.
+ */
 CanvasUI.ListBox.prototype.addOption = function(text, value) {
 	this.options.push(new CanvasUI.ListBoxOption(text, value));
 }
 
+/**
+ * Called when the listbox is dragged.  Scrolls the option list.
+ * @param x The x co-ordinate of the drag.
+ * @param y The y co-ordinate of the drag.
+ * @param dx The x distance moved.
+ * @param dy The y distance moved.
+ */
 CanvasUI.ListBox.prototype.onDrag = function(x, y, dx, dy) {
 	this.viewY -= dy;
 	if (this.viewY < 0) this.viewY = 0;
@@ -1884,6 +1909,12 @@ CanvasUI.ListBox.prototype.onDrag = function(x, y, dx, dy) {
 	this.markRectsDamaged();
 }
 
+/**
+ * Called when the window is clicked.  Selects the clicked option and starts the
+ * dragging system.
+ * @param x The x co-ordinate of the click.
+ * @param y The y co-ordinate of the click.
+ */
 CanvasUI.ListBox.prototype.onClick = function(x, y) {
 	this.dragged = true;
 	
