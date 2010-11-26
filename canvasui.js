@@ -111,56 +111,6 @@ var CanvasUI = {
 		// Call base constructor
 		CanvasUI.Gadget.prototype.constructor.call(this, 0, 0, canvas.width, canvas.height);
 		
-		/**
-		 * Called when the canvas is clicked - compensates for canvas offset from
-		 * top of document body and dispatches to the UI.
-		 */
-		this.handleClick = function(e) {
-			var x = e.clientX - canvas.offsetLeft + window.pageXOffset;
-			var y = e.clientY - canvas.offsetTop + window.pageYOffset;
-			
-			this.click(x, y);
-			
-			this.oldMouseX = x;
-			this.oldMouseY = y;
-			
-			this.damagedRectManager.redraw();
-		}
-
-		/**
-		 * Called when the canvas is released - compensates for canvas offset from
-		 * top of document body and dispatches to the UI.
-		 * TODO: Make this handle scrolling offset of document.
-		 */
-		this.handleRelease = function(e) {
-			var x = e.clientX - canvas.offsetLeft + window.pageXOffset;
-			var y = e.clientY - canvas.offsetTop + window.pageYOffset;
-
-			if (this.clickedGadget != null) this.clickedGadget.release(x, y);
-			
-			this.oldMouseX = -1;
-			this.oldMouseY = -1;
-			
-			this.damagedRectManager.redraw();
-		}
-		
-		/**
-		 * Called when the mouse moves over the canvas - compensates for canvas
-		 * offset from top of document body and dispatches to the UI.
-		 * TODO: Make this handle scrolling offset of document.
-		 */
-		this.handleDrag = function(e) {
-			var x = e.clientX - canvas.offsetLeft + window.pageXOffset;
-			var y = e.clientY - canvas.offsetTop + window.pageYOffset;
-			
-			if (this.clickedGadget != null) this.clickedGadget.drag(x, y, x - this.oldMouseX, y - this.oldMouseY);
-			
-			this.oldMouseX = x;
-			this.oldMouseY = y;
-			
-			this.damagedRectManager.redraw();
-		}
-		
 		// Set member values
 		this.draggable = false;
 		
@@ -1282,6 +1232,58 @@ CanvasUI.Gui.prototype.getClickedGadget = function() { return this.clickGadget; 
 CanvasUI.Gui.prototype.getDamagedRectManager = function() {
 	return this.damagedRectManager;
 }
+
+/**
+ * Called when the canvas is clicked - compensates for canvas offset from
+ * top of document body and dispatches to the UI.
+ */
+CanvasUI.Gui.prototype.handleClick = function(e) {
+	var x = e.clientX - canvas.offsetLeft + window.pageXOffset;
+	var y = e.clientY - canvas.offsetTop + window.pageYOffset;
+	
+	this.click(x, y);
+	
+	this.oldMouseX = x;
+	this.oldMouseY = y;
+	
+	this.damagedRectManager.redraw();
+}
+
+/**
+ * Called when the canvas is released - compensates for canvas offset from
+ * top of document body and dispatches to the UI.
+ * TODO: Make this handle scrolling offset of document.
+ */
+CanvasUI.Gui.prototype.handleRelease = function(e) {
+	var x = e.clientX - canvas.offsetLeft + window.pageXOffset;
+	var y = e.clientY - canvas.offsetTop + window.pageYOffset;
+
+	if (this.clickedGadget != null) this.clickedGadget.release(x, y);
+	
+	this.oldMouseX = -1;
+	this.oldMouseY = -1;
+	
+	this.damagedRectManager.redraw();
+}
+
+/**
+ * Called when the mouse moves over the canvas - compensates for canvas
+ * offset from top of document body and dispatches to the UI.
+ * TODO: Make this handle scrolling offset of document.
+ */
+CanvasUI.Gui.prototype.handleDrag = function(e) {
+	var x = e.clientX - canvas.offsetLeft + window.pageXOffset;
+	var y = e.clientY - canvas.offsetTop + window.pageYOffset;
+	
+	if (this.clickedGadget != null) this.clickedGadget.drag(x, y, x - this.oldMouseX, y - this.oldMouseY);
+	
+	this.oldMouseX = x;
+	this.oldMouseY = y;
+	
+	this.damagedRectManager.redraw();
+}
+
+
 
 /**
  * Button gadget.
