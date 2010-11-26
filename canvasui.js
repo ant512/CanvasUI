@@ -1430,6 +1430,13 @@ CanvasUI.Gadget.prototype.release = function(x, y) {
  */
 CanvasUI.Gadget.prototype.onDrag = function(x, y, dx, dy) { }
 
+/**
+ * Drag the gadget.
+ * @param x The x co-ordinate of the drag.
+ * @param y The y co-ordinate of the drag.
+ * @param dx The x distance moved.
+ * @param dy The y distance moved.
+ */
 CanvasUI.Gadget.prototype.drag = function(x, y, dx, dy) {
 	
 	if (this.dragged) {
@@ -1443,22 +1450,43 @@ CanvasUI.Gadget.prototype.drag = function(x, y, dx, dy) {
 	return false;
 }
 
+/**
+ * Gets the minimum x co-ordinate available to a child gadget.
+ * @return The minimum x co-ordinte available to a child gadget.
+ */
 CanvasUI.Gadget.prototype.getMinChildX = function() {
 	return this.borderSize.left;
 }
 
+/**
+ * Gets the minimum y co-ordinate available to a child gadget.
+ * @return The minimum y co-ordinte available to a child gadget.
+ */
 CanvasUI.Gadget.prototype.getMinChildY = function() {
 	return this.borderSize.top;
 }
 
+/**
+ * Gets the maximum x co-ordinate available to a child gadget.
+ * @return The maximum x co-ordinte available to a child gadget.
+ */
 CanvasUI.Gadget.prototype.getMaxChildX = function() {
 	return this.rect.width - this.borderSize.right - 1;
 }
 
+/**
+ * Gets the maximum y co-ordinate available to a child gadget.
+ * @return The maximum y co-ordinte available to a child gadget.
+ */
 CanvasUI.Gadget.prototype.getMaxChildY = function() {
 	return this.rect.height - this.borderSize.bottom - 1;
 }
 
+/**
+ * Moves the gadget to the specified co-ordinates.
+ * @param x The new x co-ordinate of the gadget, relative to its parent.
+ * @param y The new y co-ordinate of the gadget, relative to its parent.
+ */
 CanvasUI.Gadget.prototype.moveTo = function(x, y) {
 
 	this.hide();
@@ -1482,6 +1510,9 @@ CanvasUI.Gadget.prototype.moveTo = function(x, y) {
 	this.show();
 }
 
+/**
+ * Hides the gadget if it is visible.
+ */
 CanvasUI.Gadget.prototype.hide = function() {
 	if (this.visible) {
 		this.visible = false;
@@ -1490,6 +1521,9 @@ CanvasUI.Gadget.prototype.hide = function() {
 	}
 }
 
+/**
+ * Shows the gadget if it is hidden.
+ */
 CanvasUI.Gadget.prototype.show = function() {
 	if (!this.visible) {
 		this.visible = true;
@@ -1498,6 +1532,9 @@ CanvasUI.Gadget.prototype.show = function() {
 	}
 }
 
+/**
+ * Raises the gadget to the top of its parent's stack.
+ */
 CanvasUI.Gadget.prototype.raiseToTop = function() {
 	if (this.parent != null) {
 		this.hide();
@@ -1506,10 +1543,17 @@ CanvasUI.Gadget.prototype.raiseToTop = function() {
 	}
 }
 
+/**
+ * Raises the child to the top of the child stack.
+ * @param child The child to raise to the top of the stack.
+ */
 CanvasUI.Gadget.prototype.raiseChildToTop = function(child) {
 	this.children.raiseToTop(child);
 }
 
+/**
+ * Lowers the gadget to the bottom of its parent's stack.
+ */
 CanvasUI.Gadget.prototype.lowerToBottom = function() {
 	if (this.parent != null) {
 		this.hide();
@@ -1518,6 +1562,10 @@ CanvasUI.Gadget.prototype.lowerToBottom = function() {
 	}
 }
 
+/**
+ * Lowers the child to the bottom of the child stack.
+ * @param child The child to lower to the bottom of the stack.
+ */
 CanvasUI.Gadget.prototype.lowerChildToBottom = function(child) {
 	this.children.lowerToBottom(child);
 }
@@ -1529,16 +1577,36 @@ CanvasUI.Gui.prototype = new CanvasUI.Gadget;
 
 CanvasUI.Gui.prototype.constructor = CanvasUI.Gui;
 
+/**
+ * Overrides the base method with an empty method to ensure that no border is
+ * drawn.
+ */
 CanvasUI.Gui.prototype.drawBorder = function(gfx) { }
 
+/**
+ * Gets the gadget's canvas.
+ * @return The gadget's canvas.
+ */
 CanvasUI.Gui.prototype.getCanvas = function() { return this.canvas; }
 
+/**
+ * Sets the clicked gadget.
+ * @param gadget The clicked gadget.
+ */
 CanvasUI.Gui.prototype.setClickedGadget = function(gadget) {
 	this.clickedGadget = gadget;
 }
 
+/**
+ * Gets the clicked gadget.
+ * @return The clicked gadget.
+ */
 CanvasUI.Gui.prototype.getClickedGadget = function() { return this.clickedGadget; }
 
+/**
+ * Gets the damaged rectangle manager.
+ * @return The damaged rectangle manager.
+ */
 CanvasUI.Gui.prototype.getDamagedRectManager = function() {
 	return this.damagedRectManager;
 }
