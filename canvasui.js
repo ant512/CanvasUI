@@ -123,6 +123,56 @@ var CanvasUI = {
 		
 		this.damagedRectManager = new CanvasUI.DamagedRectManager(this);
 		
+		/**
+		 * Called when the canvas is clicked - compensates for canvas offset from
+		 * top of document body and dispatches to the UI.
+		 */
+		CanvasUI.Gui.prototype.handleClick = function(e) {
+			var x = e.clientX - canvas.offsetLeft + window.pageXOffset;
+			var y = e.clientY - canvas.offsetTop + window.pageYOffset;
+			
+			this.click(x, y);
+			
+			this.oldMouseX = x;
+			this.oldMouseY = y;
+			
+			this.damagedRectManager.redraw();
+		}
+
+		/**
+		 * Called when the canvas is released - compensates for canvas offset from
+		 * top of document body and dispatches to the UI.
+		 * TODO: Make this handle scrolling offset of document.
+		 */
+		CanvasUI.Gui.prototype.handleRelease = function(e) {
+			var x = e.clientX - canvas.offsetLeft + window.pageXOffset;
+			var y = e.clientY - canvas.offsetTop + window.pageYOffset;
+
+			if (this.clickedGadget != null) this.clickedGadget.release(x, y);
+			
+			this.oldMouseX = -1;
+			this.oldMouseY = -1;
+			
+			this.damagedRectManager.redraw();
+		}
+
+		/**
+		 * Called when the mouse moves over the canvas - compensates for canvas
+		 * offset from top of document body and dispatches to the UI.
+		 * TODO: Make this handle scrolling offset of document.
+		 */
+		CanvasUI.Gui.prototype.handleDrag = function(e) {
+			var x = e.clientX - canvas.offsetLeft + window.pageXOffset;
+			var y = e.clientY - canvas.offsetTop + window.pageYOffset;
+			
+			if (this.clickedGadget != null) this.clickedGadget.drag(x, y, x - this.oldMouseX, y - this.oldMouseY);
+			
+			this.oldMouseX = x;
+			this.oldMouseY = y;
+			
+			this.damagedRectManager.redraw();
+		}
+		
 		// Grab a pointer to the canvas and set up event handlers
 		var obj = this;
 		this.canvas.addEventListener("mousedown", function(e) { obj.handleClick(e); }, false);
@@ -275,6 +325,7 @@ CanvasUI.DamagedRectManager.prototype.addDamagedRect = function(rect) {
 				// Insert non-overlapping rects to the front of the array so that they are not
 				// examined again for this particular damaged rect
 				for (var k = 0; k < remainingRects.length; ++k) {
+				
 					newRects.unshift(remainingRects[k]);
 					j++;
 				}
@@ -486,7 +537,7 @@ CanvasUI.Rectangle.prototype.contains = function(x, y) {
 CanvasUI.Rectangle.prototype.splitIntersection = function(rect, remainderRects) {
 
 	if (!this.intersects(rect)) return null;
-
+	
 	// Copy the properties of rect into intersection; we trim this to size later
 	var intersection = new CanvasUI.Rectangle(rect.x, rect.y, rect.width, rect.height);
 
@@ -834,11 +885,7 @@ CanvasUI.Gadget.prototype.getRectClippedToHierarchy = function() {
 	while (parent) {
 
 		// Copy parent's properties into the rect
-		var parentRect = parent.getClientRect();
-
-		// Adjust rect to screen space
-		parentRect.x += parent.getX();
-		parentRect.y += parent.getY();
+		var parentRect = parent.rect;
 
 		rect.clipToIntersect(parentRect);
 
@@ -1231,56 +1278,6 @@ CanvasUI.Gui.prototype.getDamagedRectManager = function() {
 }
 
 /**
- * Called when the canvas is clicked - compensates for canvas offset from
- * top of document body and dispatches to the UI.
- */
-CanvasUI.Gui.prototype.handleClick = function(e) {
-	var x = e.clientX - canvas.offsetLeft + window.pageXOffset;
-	var y = e.clientY - canvas.offsetTop + window.pageYOffset;
-	
-	this.click(x, y);
-	
-	this.oldMouseX = x;
-	this.oldMouseY = y;
-	
-	this.damagedRectManager.redraw();
-}
-
-/**
- * Called when the canvas is released - compensates for canvas offset from
- * top of document body and dispatches to the UI.
- * TODO: Make this handle scrolling offset of document.
- */
-CanvasUI.Gui.prototype.handleRelease = function(e) {
-	var x = e.clientX - canvas.offsetLeft + window.pageXOffset;
-	var y = e.clientY - canvas.offsetTop + window.pageYOffset;
-
-	if (this.clickedGadget != null) this.clickedGadget.release(x, y);
-	
-	this.oldMouseX = -1;
-	this.oldMouseY = -1;
-	
-	this.damagedRectManager.redraw();
-}
-
-/**
- * Called when the mouse moves over the canvas - compensates for canvas
- * offset from top of document body and dispatches to the UI.
- * TODO: Make this handle scrolling offset of document.
- */
-CanvasUI.Gui.prototype.handleDrag = function(e) {
-	var x = e.clientX - canvas.offsetLeft + window.pageXOffset;
-	var y = e.clientY - canvas.offsetTop + window.pageYOffset;
-	
-	if (this.clickedGadget != null) this.clickedGadget.drag(x, y, x - this.oldMouseX, y - this.oldMouseY);
-	
-	this.oldMouseX = x;
-	this.oldMouseY = y;
-	
-	this.damagedRectManager.redraw();
-}
-
-/**
  * Sets up a timer that ensures that the gui redraws any changes that
  * occur outside of click/release/drag events.
  */
@@ -1512,7 +1509,7 @@ CanvasUI.ListBox.prototype.onDrag = function(x, y, dx, dy) {
 	
 	var rect = this.getClientRect();
 	var maxY = (this.itemHeight * this.options.length) - rect.height;
-	//alert(maxY);
+	
 	if (this.viewY > maxY) this.viewY = maxY;
 	this.markRectsDamaged();
 }
