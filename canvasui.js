@@ -170,7 +170,9 @@ var CanvasUI = {
 			var x = e.clientX - canvas.offsetLeft + window.pageXOffset;
 			var y = e.clientY - canvas.offsetTop + window.pageYOffset;
 
-			if (this.clickedGadget != null) this.clickedGadget.release(x, y);
+			if (this.clickedGadget != null) {
+				this.clickedGadget.release(x, y);
+			}
 			
 			this.oldMouseX = -1;
 			this.oldMouseY = -1;
@@ -184,15 +186,18 @@ var CanvasUI = {
 		 * @param e The event arguments.
 		 */
 		CanvasUI.Gui.prototype.handleDrag = function(e) {
+		
 			var x = e.clientX - canvas.offsetLeft + window.pageXOffset;
 			var y = e.clientY - canvas.offsetTop + window.pageYOffset;
 			
-			if (this.clickedGadget != null) this.clickedGadget.drag(x, y, x - this.oldMouseX, y - this.oldMouseY);
+			if (this.clickedGadget != null) {
+				this.clickedGadget.drag(x, y, x - this.oldMouseX, y - this.oldMouseY);
+				
+				this.damagedRectManager.redraw();
+			}
 			
 			this.oldMouseX = x;
 			this.oldMouseY = y;
-			
-			this.damagedRectManager.redraw();
 		}
 		
 		// Grab a pointer to the canvas and set up event handlers
@@ -578,7 +583,7 @@ CanvasUI.Rectangle.prototype.contains = function(x, y) {
 }
 
 /**
- * Splits the rect argment into the area that overlaps this rect (this is
+ * Splits the rect argument into the area that overlaps this rect (this is
  * the return value) and an array of areas that do not overlap (this is the
  * remainderRects argument, which must be passed as an empty array).
  * @param rect The rectangle to intersect with this.
@@ -1127,7 +1132,7 @@ CanvasUI.Gadget.prototype.getVisibleRects = function() {
 					var child = parent.children.at(i);
 					var childRect = new CanvasUI.Rectangle(child.getX(), child.getY(), child.getWidth(), child.getHeight());
 					
-					if (visibleRects[j].splitIntersection(childRect, remainingRects)) {
+					if (childRect.splitIntersection(visibleRects[j], remainingRects)) {
 						visibleRects.splice(j, 1);
 						j--;
 						
@@ -1194,6 +1199,19 @@ CanvasUI.Gadget.prototype.draw = function(rect) {
 
 	this.drawBackground(gfx);
 	this.drawBorder(gfx);
+	
+	/*
+	// Enable this to draw rects around all clipping regions
+	gfx.context.save();
+	gfx.context.beginPath();
+	gfx.context.rect(0, 0, 400, 400);
+	gfx.context.clip();
+	
+	gfx.context.strokeStyle = '#f00';
+	gfx.context.strokeRect(rect.x, rect.y, rect.width, rect.height);
+	gfx.context.closePath();
+	gfx.context.restore();
+	*/
 }
 
 /**
@@ -1370,6 +1388,15 @@ CanvasUI.Gadget.prototype.click = function(x, y) {
  */
 CanvasUI.Gadget.prototype.onClick = function(x, y) { }
 
+/**
+ * Release the gadget at the specified co-ordinates.
+ * @param x The x co-ordinate of the release.
+ * @param y The y co-ordinate of the release.
+ * @return True if the gadget received the release; false if not.  Releases are
+ * only received if the gadget is clicked.  If the click is received, the
+ * gadget will fire a ReleaseEvent if the click falls within the bounds of the
+ * gadget or a ReleaseOutsideEvent if the click falls outside the gadget.
+ */
 CanvasUI.Gadget.prototype.release = function(x, y) {
 
 	if (this.clicked) {
@@ -1393,6 +1420,14 @@ CanvasUI.Gadget.prototype.release = function(x, y) {
 	return false;
 }
 
+/**
+ * Called when the gadget is dragged.  Should be overridden in subclasses to
+ * allow custom drag behaviour.
+ * @param x The x co-ordinate of the drag.
+ * @param y The y co-ordinate of the drag.
+ * @param dx The x distance moved.
+ * @param dy The y distance moved.
+ */
 CanvasUI.Gadget.prototype.onDrag = function(x, y, dx, dy) { }
 
 CanvasUI.Gadget.prototype.drag = function(x, y, dx, dy) {
@@ -1487,9 +1522,9 @@ CanvasUI.Gadget.prototype.lowerChildToBottom = function(child) {
 	this.children.lowerToBottom(child);
 }
 
-/**
- * Top level gadget.
- */
+
+/** Gui Methods **/
+
 CanvasUI.Gui.prototype = new CanvasUI.Gadget;
 
 CanvasUI.Gui.prototype.constructor = CanvasUI.Gui;
@@ -1502,7 +1537,7 @@ CanvasUI.Gui.prototype.setClickedGadget = function(gadget) {
 	this.clickedGadget = gadget;
 }
 
-CanvasUI.Gui.prototype.getClickedGadget = function() { return this.clickGadget; }
+CanvasUI.Gui.prototype.getClickedGadget = function() { return this.clickedGadget; }
 
 CanvasUI.Gui.prototype.getDamagedRectManager = function() {
 	return this.damagedRectManager;
@@ -1518,10 +1553,8 @@ CanvasUI.Gui.prototype.startTimer = function() {
 }
 
 
+/** Button Methods **/
 
-/**
- * Button gadget.
- */
 CanvasUI.Button.prototype = new CanvasUI.Gadget;
 
 CanvasUI.Button.prototype.constructor = CanvasUI.Button;
@@ -1555,9 +1588,9 @@ CanvasUI.Button.prototype.drawBorder = function(gfx) {
 	}
 }
 
-/**
- * Window close button.
- */
+
+/** WindowCloseButton Methods **/
+
 CanvasUI.WindowCloseButton.prototype = new CanvasUI.Gadget;
 
 CanvasUI.WindowCloseButton.prototype.constructor = CanvasUI.WindowCloseButton;
@@ -1587,9 +1620,9 @@ CanvasUI.WindowCloseButton.prototype.drawBorder = function(gfx) {
 	}
 }
 
-/**
- * Window depth button.
- */
+
+/** WindowDepthButton Methods **/
+
 CanvasUI.WindowDepthButton.prototype = new CanvasUI.Gadget;
 
 CanvasUI.WindowDepthButton.prototype.constructor = CanvasUI.WindowDepthButton;
@@ -1621,10 +1654,8 @@ CanvasUI.WindowDepthButton.prototype.drawBorder = function(gfx) {
 }
 
 
+/** Window Methods **/
 
-/**
- * Window gadget.
- */
 CanvasUI.Window.prototype = new CanvasUI.Gadget;
 
 CanvasUI.Window.prototype.constructor = CanvasUI.Window;
@@ -1692,9 +1723,9 @@ CanvasUI.Window.prototype.onDrag = function(x, y, dx, dy) {
 	this.moveTo(x - this.grabX, y - this.grabY);
 }
 
-/**
- * ListBox gadget.
- */
+
+/** ListBox Methods **/
+
 CanvasUI.ListBox.prototype = new CanvasUI.Gadget;
 
 CanvasUI.ListBox.prototype.constructor = CanvasUI.ListBox;
