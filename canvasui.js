@@ -185,18 +185,16 @@ var CanvasUI = {
 										// essential recurring code
 		
 		/**
-		 * Sets up a timer that repeatedly calls this function.  Ensures that
-		 * the gui redraws any changes that occur outside of click/release/
-		 * drag evens.
+		 * Sets up a timer that ensures that the gui redraws any changes that
+		 * occur outside of click/release/drag events.
 		 */
-		this.run = function() {
-			this.damagedRectManager.redraw();
-			var obj = this;
-			this.timer = setInterval(function() { obj.run(), 10});
+		this.startTimer = function() {
+			var obj= this;
+			this.timer = setTimeout(function() { obj.damagedRectManager.redraw(), 10 });
 		}
 		
 		// Start the timer
-		this.run();
+		this.startTimer();
 		
 		// Ensure that the damaged rect manager knows to redraw this gadget
 		this.damagedRectManager.addDamagedRect(this.rect);
@@ -362,6 +360,7 @@ CanvasUI.DamagedRectManager.prototype.redraw = function(rect) {
 CanvasUI.DamagedRectManager.prototype.drawRects = function(gadget, damagedRects) {
 
 	if (!gadget.isVisible()) return;
+	if (damagedRects.length == 0) return;
 
 	var gadgetRect = gadget.getRectClippedToHierarchy();
 	
