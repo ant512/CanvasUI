@@ -180,6 +180,26 @@ var CanvasUI = {
 		this.canvas.addEventListener("mouseup", function(e) { obj.handleRelease(e); }, false);
 		this.canvas.addEventListener("mouseout", function(e) { obj.handleRelease(e); }, false);
 		this.canvas.addEventListener("mousemove", function(e) { obj.handleDrag(e); }, false);
+		
+		this.timer = null;				// Timer that causes the gui to run
+										// essential recurring code
+		
+		/**
+		 * Sets up a timer that repeatedly calls this function.  Ensures that
+		 * the gui redraws any changes that occur outside of click/release/
+		 * drag evens.
+		 */
+		this.run = function() {
+			this.damagedRectManager.redraw();
+			var obj = this;
+			this.timer = setInterval(function() { obj.run(), 10});
+		}
+		
+		// Start the timer
+		this.run();
+		
+		// Ensure that the damaged rect manager knows to redraw this gadget
+		this.damagedRectManager.addDamagedRect(this.rect);
 	},
 	
 	/**
@@ -916,8 +936,6 @@ CanvasUI.Gadget.prototype.markRectsDamaged = function() {
 	for (var i in damagedRects) {
 		damagedRectManager.addDamagedRect(damagedRects[i]);
 	}
-	
-	damagedRectManager.redraw();
 }
 
 CanvasUI.Gadget.prototype.getVisibleRects = function() {
