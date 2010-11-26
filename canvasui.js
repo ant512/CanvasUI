@@ -24,6 +24,7 @@ var CanvasUI = {
 		this.shineColour = '#fff';
 		this.shadowColour = '#000';
 		this.darkColour = '#555';
+		this.highlightColour = '#aaf';
 		this.focusedGadget = null;
 		
 		this.rect = new CanvasUI.Rectangle(x, y, width, height);
@@ -1669,7 +1670,7 @@ CanvasUI.WindowCloseButton.prototype.constructor = CanvasUI.WindowCloseButton;
 CanvasUI.WindowCloseButton.prototype.drawBackground = function(gfx) {
 	var drawRect = new CanvasUI.Rectangle(0, 0, this.rect.width, this.rect.height);
 	
-	var colour = this.parent.focused ? '#aaf' : '#ddf';
+	var colour = this.parent.focused ? this.highlightColour : '#ddf';
 	colour = this.parent.dragged ? '#88f' : colour;
 	
 	gfx.fillRect(drawRect, colour);
@@ -1709,7 +1710,7 @@ CanvasUI.WindowDepthButton.prototype.constructor = CanvasUI.WindowDepthButton;
 CanvasUI.WindowDepthButton.prototype.drawBackground = function(gfx) {
 	var drawRect = new CanvasUI.Rectangle(0, 0, this.rect.width, this.rect.height);
 	
-	var colour = this.parent.focused ? '#aaf' : '#ddf';
+	var colour = this.parent.focused ? this.highlightColour : '#ddf';
 	colour = this.parent.dragged ? '#88f' : colour;
 	
 	gfx.fillRect(drawRect, colour);
@@ -1764,7 +1765,7 @@ CanvasUI.Window.prototype.drawBorder = function(gfx) {
 	var bottomRect = new CanvasUI.Rectangle(0, this.rect.height - this.borderSize.bottom, this.rect.width, this.borderSize.bottom);
 	
 	// Choose border colour based on focus
-	var borderColour = this.focused ? '#aaf' : '#ddf';
+	var borderColour = this.focused ? this.highlightColour : '#ddf';
 	
 	// Update border colour based on drag
 	borderColour = this.dragged ? '#88f' : borderColour;
@@ -1855,7 +1856,7 @@ CanvasUI.ListBox.prototype.drawBackground = function(gfx) {
 		if (!this.options[i].selected) {
 			gfx.fillRect(itemRect, this.shineColour);
 		} else {
-			gfx.fillRect(itemRect, '#aaf');
+			gfx.fillRect(itemRect, this.highlightColour);
 		}
 		
 		gfx.fillText(this.options[i].text, rect.x, rect.y + itemRect.y + this.itemHeight - (this.itemHeight / 2), this.shadowColour);
