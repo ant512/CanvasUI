@@ -790,7 +790,7 @@ CanvasUI.GadgetCollection.prototype.remove = function(gadget) {
 	
 	gadget.parent = null;
 }
-		
+
 /**
  * Get the number of gadgets in the collection.
  */
@@ -954,7 +954,10 @@ CanvasUI.Gadget.prototype.getVisibleRects = function() {
 				for (var j = 0; j < visibleRects.length; ++j) {
 					var remainingRects = new Array();
 					
-					if (visibleRects[j].splitIntersection(parent.children.at(i).rect, remainingRects)) {
+					var child = parent.children.at(i);
+					var childRect = new CanvasUI.Rectangle(child.getX(), child.getY(), child.getWidth(), child.getHeight());
+					
+					if (visibleRects[j].splitIntersection(childRect, remainingRects)) {
 						visibleRects.splice(j, 1);
 						j--;
 						
@@ -1005,7 +1008,7 @@ CanvasUI.Gadget.prototype.draw = function(rect) {
 	if (!this.isVisible()) return;
 	
 	var gfx = new CanvasUI.Graphics(this.getX(), this.getY(), this.getCanvas(), rect);
-	
+
 	this.drawBackground(gfx);
 	this.drawBorder(gfx);
 }
