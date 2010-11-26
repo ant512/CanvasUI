@@ -7,22 +7,9 @@
 var ui;
 
 function init(canvasId) {
-	//var canvas = document.getElementById(canvasId);
-	//ui = new CanvasUI.Gui(canvas);
+	var canvas = document.getElementById(canvasId);
+	ui = new CanvasUI.Gui(canvas);
 	
-	var rect1 = new CanvasUI.Rectangle(0, 0, 100, 100);
-	var rect2 = new CanvasUI.Rectangle(50, 50, 100, 100);
-	
-	var nonOverlap = new Array();
-	var rect3 = rect1.splitIntersection(rect2, nonOverlap);
-	
-	alert(rect3.x + ',' + rect3.y + ',' + rect3.width + ',' + rect3.height);
-	
-	for (var i in nonOverlap) {
-		alert(nonOverlap[i].x + ',' + nonOverlap[i].y + ',' + nonOverlap[i].width + ',' + nonOverlap[i].height);
-	}
-	
-	/*
 	var window1 = new CanvasUI.Window("Window 1", 10, 10, 60, 60);
 	ui.children.add(window1);
 	
@@ -67,9 +54,6 @@ function init(canvasId) {
 	listbox.addOption("text 11", 10);
 	listbox.addOption("text 12", 11);
 	window3.children.add(listbox);
-	
-	ui.show();
-	*/
 }
 
 		</script>
