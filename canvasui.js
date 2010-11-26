@@ -1627,6 +1627,10 @@ CanvasUI.Button.prototype = new CanvasUI.Gadget;
 
 CanvasUI.Button.prototype.constructor = CanvasUI.Button;
 
+/**
+ * Draws the gadget.
+ * @param gfx The Graphics object to draw with.
+ */
 CanvasUI.Button.prototype.drawBackground = function(gfx) {
 	var drawRect = new CanvasUI.Rectangle(0, 0, this.rect.width, this.rect.height);
 	
@@ -1646,6 +1650,10 @@ CanvasUI.Button.prototype.drawBackground = function(gfx) {
 	}
 }
 
+/**
+ * Draws the gadget's border.
+ * @param gfx The Graphics object to draw with.
+ */
 CanvasUI.Button.prototype.drawBorder = function(gfx) {
 	var drawRect = new CanvasUI.Rectangle(0, 0, this.rect.width, this.rect.height);
 	
@@ -1663,6 +1671,10 @@ CanvasUI.WindowCloseButton.prototype = new CanvasUI.Gadget;
 
 CanvasUI.WindowCloseButton.prototype.constructor = CanvasUI.WindowCloseButton;
 
+/**
+ * Draws the gadget.
+ * @param gfx The Graphics object to draw with.
+ */
 CanvasUI.WindowCloseButton.prototype.drawBackground = function(gfx) {
 	var drawRect = new CanvasUI.Rectangle(0, 0, this.rect.width, this.rect.height);
 	
@@ -1678,6 +1690,10 @@ CanvasUI.WindowCloseButton.prototype.drawBackground = function(gfx) {
 	gfx.drawRect(new CanvasUI.Rectangle(quarterWidth, quarterHeight, glyphWidth, glyphHeight), this.shadowColour);
 }
 
+/**
+ * Draws the gadget's border.
+ * @param gfx The Graphics object to draw with.
+ */
 CanvasUI.WindowCloseButton.prototype.drawBorder = function(gfx) {
 	var drawRect = new CanvasUI.Rectangle(0, 0, this.rect.width, this.rect.height);
 	
@@ -1695,6 +1711,10 @@ CanvasUI.WindowDepthButton.prototype = new CanvasUI.Gadget;
 
 CanvasUI.WindowDepthButton.prototype.constructor = CanvasUI.WindowDepthButton;
 
+/**
+ * Draws the gadget.
+ * @param gfx The Graphics object to draw with.
+ */
 CanvasUI.WindowDepthButton.prototype.drawBackground = function(gfx) {
 	var drawRect = new CanvasUI.Rectangle(0, 0, this.rect.width, this.rect.height);
 	
@@ -1711,6 +1731,10 @@ CanvasUI.WindowDepthButton.prototype.drawBackground = function(gfx) {
 	gfx.drawRect(new CanvasUI.Rectangle(quarterWidth * 1.5, quarterHeight * 1.5, glyphWidth, glyphHeight), this.shadowColour);
 }
 
+/**
+ * Draws the gadget's border.
+ * @param gfx The Graphics object to draw with.
+ */
 CanvasUI.WindowDepthButton.prototype.drawBorder = function(gfx) {
 	var drawRect = new CanvasUI.Rectangle(0, 0, this.rect.width, this.rect.height);
 	
@@ -1728,11 +1752,19 @@ CanvasUI.Window.prototype = new CanvasUI.Gadget;
 
 CanvasUI.Window.prototype.constructor = CanvasUI.Window;
 
+/**
+ * Draws the gadget.
+ * @param gfx The Graphics object to draw with.
+ */
 CanvasUI.Window.prototype.drawBackground = function(gfx) {
 	var drawRect = new CanvasUI.Rectangle(0, 0, this.rect.width, this.rect.height);
 	gfx.fillRect(drawRect, this.backColour);
 }
 
+/**
+ * Draws the gadget's border.
+ * @param gfx The Graphics object to draw with.
+ */
 CanvasUI.Window.prototype.drawBorder = function(gfx) {
 	var borderRect = new CanvasUI.Rectangle(0, 0, this.rect.width, this.rect.height);
 	var titleRect = new CanvasUI.Rectangle(0, 0, this.rect.width, this.borderSize.top);
@@ -1798,6 +1830,10 @@ CanvasUI.ListBox.prototype = new CanvasUI.Gadget;
 
 CanvasUI.ListBox.prototype.constructor = CanvasUI.ListBox;
 
+/**
+ * Draws the gadget.
+ * @param gfx The Graphics object to draw with.
+ */
 CanvasUI.ListBox.prototype.drawBackground = function(gfx) {
 	var drawRect = new CanvasUI.Rectangle(0, 0, this.rect.width, this.rect.height);
 	gfx.fillRect(drawRect, this.backColour);
@@ -1824,6 +1860,10 @@ CanvasUI.ListBox.prototype.drawBackground = function(gfx) {
 	}
 }
 
+/**
+ * Draws the gadget's border.
+ * @param gfx The Graphics object to draw with.
+ */
 CanvasUI.ListBox.prototype.drawBorder = function(gfx) {
 	var drawRect = new CanvasUI.Rectangle(0, 0, this.rect.width, this.rect.height);
 	gfx.drawBevelledRect(drawRect, this.shineColour, this.shadowColour);
