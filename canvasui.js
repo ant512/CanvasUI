@@ -689,20 +689,11 @@ CanvasUI.Graphics.prototype.drawBevelledRect = function(rect, lightColour, darkC
  */
 CanvasUI.Graphics.prototype.drawRect = function(rect, colour) {
 	if (this.context == null) return;
-		
-	// Compensate for graphics offset
-	var x = rect.x + this.x;
-	var y = rect.y + this.y;
-
-	this.context.save();
-	this.context.beginPath();
-	this.context.rect(this.clipRect.x, this.clipRect.y, this.clipRect.width, this.clipRect.height);
-	this.context.clip();
 	
-	this.context.strokeStyle = colour;
-	this.context.strokeRect(x, y, rect.width, rect.height);
-	this.context.closePath();
-	this.context.restore();
+	this.fillRect(new CanvasUI.Rectangle(rect.x, rect.y, rect.width, 1), colour);
+	this.fillRect(new CanvasUI.Rectangle(rect.x, rect.y, 1, rect.height), colour);
+	this.fillRect(new CanvasUI.Rectangle(rect.x + rect.width - 1, rect.y, 1, rect.height), colour);
+	this.fillRect(new CanvasUI.Rectangle(rect.x, rect.y + rect.height - 1, rect.width, 1), colour);
 }
 
 /**
