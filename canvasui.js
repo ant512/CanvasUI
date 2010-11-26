@@ -297,6 +297,20 @@ CanvasUI.DamagedRectManager.prototype.redraw = function(rect) {
 	this.drawRects(this.gadget, this.damagedRects);
 }
 
+/**
+ * Redraws the specified list of damaged rects for the specified gadget.  The
+ * function will recursively call itself in order to draw the gadget and its
+ * children in such a way as to minimise redrawing.  The algorithm looks like
+ * this:
+ * - Work out which parts of the damagedRects array intersect the current
+ *   gadget and remove them from the damagedRects array.
+ * - Recursively call the method for each of the gadget's children, sending the
+ *   intersecting regions as a new array.
+ * - Receive back from children any undrawn areas in the new array.
+ * - Redraw all rects in the new array.
+ * @param gadget The gadget to redraw.
+ * @param damagedRects An array of rectangles that must be redrawn.
+ */
 CanvasUI.DamagedRectManager.prototype.drawRects = function(gadget, damagedRects) {
 
 	if (!gadget.isVisible()) return;
