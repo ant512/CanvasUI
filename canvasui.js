@@ -706,7 +706,7 @@ CanvasUI.Graphics.prototype.drawRect = function(rect, colour) {
  */
 CanvasUI.Graphics.prototype.fillText = function(text, x, y, colour) {
 	if (this.context == null) return;
-		
+	
 	// Compensate for graphics offset
 	x += this.x;
 	y += this.y;
@@ -715,9 +715,9 @@ CanvasUI.Graphics.prototype.fillText = function(text, x, y, colour) {
 	this.context.beginPath();
 	this.context.rect(this.clipRect.x, this.clipRect.y, this.clipRect.width, this.clipRect.height);
 	this.context.clip();
-	
+
 	this.context.fillStyle = colour;
-	this.context.font = this.fontSize + ', ' + this.fontFamily;
+	this.context.font = this.fontSize + ' ' + this.fontFamily;
 	this.context.fillText(text, x, y);
 	this.context.closePath();
 	this.context.restore();
