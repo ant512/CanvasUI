@@ -785,6 +785,20 @@ CanvasUI.Graphics.prototype.fillRect = function(rect, colour) {
 	this.context.restore();
 }
 
+/**
+ * Draws a rectangle filled with a linear gradient.
+ * @param rect The rectangle to draw.
+ * @param gradientX1 The x co-ordinate of the start of the gradient.
+ * @param gradientY1 The y co-ordinate of the start of the gradient.
+ * @param gradientX2 The x co-ordinate of the end of the gradient.
+ * @param gradientY2 The y co-ordinate of the end of the gradient.
+ * @param colourStops An array of anonymous objects containing colour stop
+ * data.  A black to white gradient would be defined as:
+ * [{ offset: 0, colour: '#000' }, { offset: 1, colour: '#fff' }]
+ * The offset property of the objects is a fractional value between 0 and 1
+ * inclusive, where 0 is the start of the gradient, 1 is the end of the
+ * gradient, and 0.5 is half-way between the two.
+ */
 CanvasUI.Graphics.prototype.fillGradientRect = function(rect, gradientX1, gradientY1, gradientX2, gradientY2, colourStops) {
 	if (this.context == null) return;
 	
