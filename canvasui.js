@@ -18,8 +18,6 @@ var CanvasUI = {
 		this.visible = true;
 		this.enabled = true;
 		this.draggable = true;
-		this.grabX = 0;
-		this.grabY = 0;
 		this.backColour = '#eee';
 		this.shineColour = '#fff';
 		this.shadowColour = '#000';
@@ -350,6 +348,31 @@ var CanvasUI = {
 		this.text = text;
 		this.value = value;
 		this.selected = false;
+	},
+
+	/**
+	 * A scrollbar.
+	 * @param x The x co-ordinate of the gadget, relative to its parent.
+	 * @param y The y co-ordinate of the gadget, relataive to its parent.
+	 * @param width The width of the gadget.
+	 * @param height The height of the gadget.
+	 */
+	Scrollbar: function(x, y, width, height) {
+
+		// Call base constructor
+		CanvasUI.Gadget.prototype.constructor.call(this, x, y, width, height);
+		
+		this.draggable = true;
+		
+		this.borderSize.top = 4;
+		this.borderSize.right = 4;
+		this.borderSize.bottom = 4;
+		this.borderSize.left = 4;
+
+		this.minimumValue = 0;
+		this.maximumValue = 0;
+		this.pageSize = 0;
+		this.value = 0;
 	}
 }
 
@@ -1310,14 +1333,13 @@ CanvasUI.Gadget.prototype.click = function(x, y) {
 	
 	this.setFocusedGadget(null);
 	
-	this.grabX = x - this.rect.x;
-	this.grabY = y - this.rect.y;
-	
-	this.processClick(x, y);
+	var rect = this.getClientRect();
+
+	this.processClick(x - this.getX() - rect.x, y - this.getY() - rect.y);
 	
 	this.markRectsDamaged();
 	
-	if (this.onClick != null) this.onClick(this, x, y);
+	if (this.onClick != null) this.onClick(this, x - this.getX() - rect.x, y - this.getY() - rect.y);
 	
 	return true;
 }
@@ -1348,12 +1370,14 @@ CanvasUI.Gadget.prototype.release = function(x, y) {
 		if (this.getClickedGadget() == this) this.setClickedGadget(null);
 		
 		this.markRectsDamaged();
+
+		var rect = this.getClientRect();
 		
 		// Released within the gadget or outside?
 		if (this.checkPointCollision(x, y)) {
-			if (this.onRelease != null) this.onRelease(this, x, y);
+			if (this.onRelease != null) this.onRelease(this, x - this.getX() - rect.x, y - this.getY() - rect.y);
 		} else {
-			if (this.onReleaseOutside != null) this.onReleaseOutside(this, x, y);
+			if (this.onReleaseOutside != null) this.onReleaseOutside(this, x - this.getX() - rect.y, y - this.getY() - rect.y);
 		}
 		
 		return true;
@@ -1382,9 +1406,12 @@ CanvasUI.Gadget.prototype.processDrag = function(x, y, dx, dy) { }
 CanvasUI.Gadget.prototype.drag = function(x, y, dx, dy) {
 	
 	if (this.dragged) {
-		this.processDrag(x, y, dx, dy);
+
+		var rect = this.getClientRect();
+
+		this.processDrag(x - this.getX() - rect.x, y - this.getY() - rect.y, dx, dy);
 		
-		if (this.onDrag != null) this.onDrag(this, x, y, dx, dy);
+		if (this.onDrag != null) this.onDrag(this, x - this.getX() - rect.x, y - this.getY() - rect.y, dx, dy);
 			
 		return true;
 	}
@@ -1843,7 +1870,7 @@ CanvasUI.Window.prototype.processClick = function(x, y) {
 
 	// Only drag if click within title bar
 	if (this.draggable) {
-		if (y - this.getY() < this.borderSize.top) {
+		if (y < 0) {
 			this.dragged = true;
 		}
 	}
@@ -1857,7 +1884,7 @@ CanvasUI.Window.prototype.processClick = function(x, y) {
  * @param dy The y distance moved.
  */
 CanvasUI.Window.prototype.processDrag = function(x, y, dx, dy) {
-	this.moveTo(x - this.grabX, y - this.grabY);
+	this.moveTo(this.rect.x + dx, this.rect.y + dy);
 }
 
 
@@ -1934,8 +1961,8 @@ CanvasUI.ListBox.prototype.processDrag = function(x, y, dx, dy) {
 }
 
 /**
- * Called when the window is clicked.  Selects the clicked option and starts the
- * dragging system.
+ * Called when the listbox is clicked.  Selects the clicked option and starts
+ * the dragging system.
  * @param x The x co-ordinate of the click.
  * @param y The y co-ordinate of the click.
  */
@@ -1943,12 +1970,8 @@ CanvasUI.ListBox.prototype.processClick = function(x, y) {
 	this.dragged = true;
 	
 	// Get the click y co-ord relative to the gadget
-	var localY = (y - this.getY()) + this.viewY;
-	
-	// Adjust for border size
-	var rect = this.getClientRect();
-	localY -= rect.y;
-	
+	var localY = y + this.viewY;
+
 	// Get the index of the clicked item
 	var index = Math.floor(localY / this.itemHeight);
 	
@@ -1956,4 +1979,111 @@ CanvasUI.ListBox.prototype.processClick = function(x, y) {
 	this.options[index].selected = !this.options[index].selected;
 	
 	if (this.onValueChange != null) this.onValueChange(this);
+}
+
+
+/** Scrollbar Methods **/
+
+CanvasUI.Scrollbar.prototype = new CanvasUI.Gadget;
+
+CanvasUI.Scrollbar.prototype.constructor = CanvasUI.Scrollbar;
+
+/**
+ * Draws the gadget.
+ * @param gfx The Graphics object to draw with.
+ */
+CanvasUI.Scrollbar.prototype.drawBackground = function(gfx) {
+	var drawRect = new CanvasUI.Rectangle(0, 0, this.rect.width, this.rect.height);
+	gfx.fillRect(drawRect, this.backColour);
+	
+	var colour = this.dragged ? '#fff' : '#555';
+
+	gfx.fillRect(this.getGripRect(), colour);
+}
+
+/**
+ * Draws the gadget's border.
+ * @param gfx The Graphics object to draw with.
+ */
+CanvasUI.Scrollbar.prototype.drawBorder = function(gfx) {
+	var drawRect = new CanvasUI.Rectangle(0, 0, this.rect.width, this.rect.height);
+	gfx.drawBevelledRect(drawRect, this.shineColour, this.shadowColour);
+}
+
+/**
+ * Called when the scrollbar is clicked.  Starts the dragging system.
+ * @param x The x co-ordinate of the click.
+ * @param y The y co-ordinate of the click.
+ */
+CanvasUI.Scrollbar.prototype.processClick = function(x, y) {
+
+	var gripRect = this.getGripRect();
+
+	if (gripRect.contains(x, y)) {
+		this.dragged = true;
+	} else {
+
+		if (y > gripRect.y) {
+			this.setValue(this.value + this.pageSize);
+		} else if (y < gripRect.y) {
+			this.setValue(this.value - this.pageSize);
+		}
+	}
+}
+
+/**
+ * Called when the scrollbar is dragged.  Moves the grip.
+ * @param x The x co-ordinate of the drag.
+ * @param y The y co-ordinate of the drag.
+ * @param dx The x distance moved.
+ * @param dy The y distance moved.
+ */
+CanvasUI.Scrollbar.prototype.processDrag = function(x, y, dx, dy) {
+
+	var rect = this.getClientRect();
+
+	var range = this.maximumValue - this.minimumValue;
+	var ratio = range / rect.height;
+
+	this.setValue(this.value + (dy * ratio));
+
+	this.markRectsDamaged();
+}
+
+CanvasUI.Scrollbar.prototype.getGripRect = function() {
+	var rect = this.getClientRect();
+
+	// If pageSize is greater than 1 we aren't dealing with a slider - we have
+	// a scrollbar.  In that situation, we need to subtract the page size from
+	// the maximum value to cater for the fact that we only scroll when the
+	// page is full.
+	var maxValue = this.pageSize > 1 ? this.maximumValue - this.pageSize : this.maximumValue;
+	var range = this.maximumValue - this.minimumValue;
+	var ratio = range / rect.height;
+	var gripSize = this.pageSize / ratio;
+
+	range = maxValue - this.minimumValue;
+
+	var value = ((this.value - this.minimumValue) * (rect.height - gripSize) + range) / range;
+
+	return new CanvasUI.Rectangle(rect.x, rect.y + value, rect.width, gripSize);
+}
+
+CanvasUI.Scrollbar.prototype.setValue = function(value) {
+	var oldValue = this.value;
+
+	this.value = value;
+
+	// If pageSize is greater than 1 we aren't dealing with a slider - we have
+	// a scrollbar.  In that situation, we need to subtract the page size from
+	// the maximum value to cater for the fact that we only scroll when the
+	// page is full.
+	var maxValue = this.pageSize > 1 ? this.maximumValue - this.pageSize : this.maximumValue;
+
+	if (this.value > maxValue) this.value = maxValue;
+	if (this.value < this.minimumValue) this.value = this.minimumValue;
+
+	if (oldValue != this.value) {
+		if (this.onValueChange != null) this.onValueChange(this);
+	}
 }

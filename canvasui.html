@@ -59,6 +59,14 @@ function init(canvasId) {
 	listbox.addOption("text 11", 10);
 	listbox.addOption("text 12", 11);
 	window3.children.add(listbox);
+
+	var scrollbar = new CanvasUI.Scrollbar(rect.x + 100, rect.y + 40, 30, 100);
+	window3.children.add(scrollbar);
+
+	scrollbar.maximumValue = 10;
+	scrollbar.minimumValue = 0;
+	scrollbar.pageSize = 5;
+	scrollbar.value = 1;
 }
 
 		</script>
