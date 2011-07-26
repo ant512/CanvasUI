@@ -351,13 +351,38 @@ var CanvasUI = {
 	},
 
 	/**
-	 * A scrollbar.
+	 * A vertical scrollbar.
 	 * @param x The x co-ordinate of the gadget, relative to its parent.
 	 * @param y The y co-ordinate of the gadget, relataive to its parent.
 	 * @param width The width of the gadget.
 	 * @param height The height of the gadget.
 	 */
-	Scrollbar: function(x, y, width, height) {
+	ScrollbarVertical: function(x, y, width, height) {
+
+		// Call base constructor
+		CanvasUI.Gadget.prototype.constructor.call(this, x, y, width, height);
+		
+		this.draggable = true;
+		
+		this.borderSize.top = 4;
+		this.borderSize.right = 4;
+		this.borderSize.bottom = 4;
+		this.borderSize.left = 4;
+
+		this.minimumValue = 0;
+		this.maximumValue = 0;
+		this.pageSize = 0;
+		this.value = 0;
+	},
+
+	/**
+	 * A honrizontal scrollbar.
+	 * @param x The x co-ordinate of the gadget, relative to its parent.
+	 * @param y The y co-ordinate of the gadget, relataive to its parent.
+	 * @param width The width of the gadget.
+	 * @param height The height of the gadget.
+	 */
+	ScrollbarHorizontal: function(x, y, width, height) {
 
 		// Call base constructor
 		CanvasUI.Gadget.prototype.constructor.call(this, x, y, width, height);
@@ -1982,17 +2007,17 @@ CanvasUI.ListBox.prototype.processClick = function(x, y) {
 }
 
 
-/** Scrollbar Methods **/
+/** Vertical scrollbar Methods **/
 
-CanvasUI.Scrollbar.prototype = new CanvasUI.Gadget;
+CanvasUI.ScrollbarVertical.prototype = new CanvasUI.Gadget;
 
-CanvasUI.Scrollbar.prototype.constructor = CanvasUI.Scrollbar;
+CanvasUI.ScrollbarVertical.prototype.constructor = CanvasUI.ScrollbarVertical;
 
 /**
  * Draws the gadget.
  * @param gfx The Graphics object to draw with.
  */
-CanvasUI.Scrollbar.prototype.drawBackground = function(gfx) {
+CanvasUI.ScrollbarVertical.prototype.drawBackground = function(gfx) {
 	var drawRect = new CanvasUI.Rectangle(0, 0, this.rect.width, this.rect.height);
 	gfx.fillRect(drawRect, this.backColour);
 	
@@ -2005,7 +2030,7 @@ CanvasUI.Scrollbar.prototype.drawBackground = function(gfx) {
  * Draws the gadget's border.
  * @param gfx The Graphics object to draw with.
  */
-CanvasUI.Scrollbar.prototype.drawBorder = function(gfx) {
+CanvasUI.ScrollbarVertical.prototype.drawBorder = function(gfx) {
 	var drawRect = new CanvasUI.Rectangle(0, 0, this.rect.width, this.rect.height);
 	gfx.drawBevelledRect(drawRect, this.shineColour, this.shadowColour);
 }
@@ -2015,7 +2040,7 @@ CanvasUI.Scrollbar.prototype.drawBorder = function(gfx) {
  * @param x The x co-ordinate of the click.
  * @param y The y co-ordinate of the click.
  */
-CanvasUI.Scrollbar.prototype.processClick = function(x, y) {
+CanvasUI.ScrollbarVertical.prototype.processClick = function(x, y) {
 
 	var gripRect = this.getGripRect();
 
@@ -2038,7 +2063,7 @@ CanvasUI.Scrollbar.prototype.processClick = function(x, y) {
  * @param dx The x distance moved.
  * @param dy The y distance moved.
  */
-CanvasUI.Scrollbar.prototype.processDrag = function(x, y, dx, dy) {
+CanvasUI.ScrollbarVertical.prototype.processDrag = function(x, y, dx, dy) {
 
 	var rect = this.getClientRect();
 
@@ -2050,7 +2075,7 @@ CanvasUI.Scrollbar.prototype.processDrag = function(x, y, dx, dy) {
 	this.markRectsDamaged();
 }
 
-CanvasUI.Scrollbar.prototype.getGripRect = function() {
+CanvasUI.ScrollbarVertical.prototype.getGripRect = function() {
 	var rect = this.getClientRect();
 
 	// If pageSize is greater than 1 we aren't dealing with a slider - we have
@@ -2061,15 +2086,130 @@ CanvasUI.Scrollbar.prototype.getGripRect = function() {
 	var range = this.maximumValue - this.minimumValue;
 	var ratio = range / rect.height;
 	var gripSize = this.pageSize / ratio;
+	var span = rect.height - gripSize;
+
+	if (span == 0) return new CanvasUI.Rectangle(rect.x, rect.y, rect.width, rect.height);
+	if (this.value == this.minimumValue) return new CanvasUI.Rectangle(rect.x, rect.y, rect.width, gripSize);
 
 	range = maxValue - this.minimumValue;
 
-	var value = ((this.value - this.minimumValue) * (rect.height - gripSize) + range) / range;
+	var value = ((this.value - this.minimumValue) * span + range) / range;
 
 	return new CanvasUI.Rectangle(rect.x, rect.y + value, rect.width, gripSize);
 }
 
-CanvasUI.Scrollbar.prototype.setValue = function(value) {
+CanvasUI.ScrollbarVertical.prototype.setValue = function(value) {
+	var oldValue = this.value;
+
+	this.value = value;
+
+	// If pageSize is greater than 1 we aren't dealing with a slider - we have
+	// a scrollbar.  In that situation, we need to subtract the page size from
+	// the maximum value to cater for the fact that we only scroll when the
+	// page is full.
+	var maxValue = this.pageSize > 1 ? this.maximumValue - this.pageSize : this.maximumValue;
+
+	if (this.value > maxValue) this.value = maxValue;
+	if (this.value < this.minimumValue) this.value = this.minimumValue;
+
+	if (oldValue != this.value) {
+		if (this.onValueChange != null) this.onValueChange(this);
+	}
+}
+
+
+/** Horizontal scrollbar Methods **/
+
+CanvasUI.ScrollbarHorizontal.prototype = new CanvasUI.Gadget;
+
+CanvasUI.ScrollbarHorizontal.prototype.constructor = CanvasUI.ScrollbarHorizontal;
+
+/**
+ * Draws the gadget.
+ * @param gfx The Graphics object to draw with.
+ */
+CanvasUI.ScrollbarHorizontal.prototype.drawBackground = function(gfx) {
+	var drawRect = new CanvasUI.Rectangle(0, 0, this.rect.width, this.rect.height);
+	gfx.fillRect(drawRect, this.backColour);
+	
+	var colour = this.dragged ? '#fff' : '#555';
+
+	gfx.fillRect(this.getGripRect(), colour);
+}
+
+/**
+ * Draws the gadget's border.
+ * @param gfx The Graphics object to draw with.
+ */
+CanvasUI.ScrollbarHorizontal.prototype.drawBorder = function(gfx) {
+	var drawRect = new CanvasUI.Rectangle(0, 0, this.rect.width, this.rect.height);
+	gfx.drawBevelledRect(drawRect, this.shineColour, this.shadowColour);
+}
+
+/**
+ * Called when the scrollbar is clicked.  Starts the dragging system.
+ * @param x The x co-ordinate of the click.
+ * @param y The y co-ordinate of the click.
+ */
+CanvasUI.ScrollbarHorizontal.prototype.processClick = function(x, y) {
+
+	var gripRect = this.getGripRect();
+
+	if (gripRect.contains(x, y)) {
+		this.dragged = true;
+	} else {
+
+		if (x > gripRect.x) {
+			this.setValue(this.value + this.pageSize);
+		} else if (x < gripRect.x) {
+			this.setValue(this.value - this.pageSize);
+		}
+	}
+}
+
+/**
+ * Called when the scrollbar is dragged.  Moves the grip.
+ * @param x The x co-ordinate of the drag.
+ * @param y The y co-ordinate of the drag.
+ * @param dx The x distance moved.
+ * @param dy The y distance moved.
+ */
+CanvasUI.ScrollbarHorizontal.prototype.processDrag = function(x, y, dx, dy) {
+
+	var rect = this.getClientRect();
+
+	var range = this.maximumValue - this.minimumValue;
+	var ratio = range / rect.width;
+
+	this.setValue(this.value + (dx * ratio));
+
+	this.markRectsDamaged();
+}
+
+CanvasUI.ScrollbarHorizontal.prototype.getGripRect = function() {
+	var rect = this.getClientRect();
+
+	// If pageSize is greater than 1 we aren't dealing with a slider - we have
+	// a scrollbar.  In that situation, we need to subtract the page size from
+	// the maximum value to cater for the fact that we only scroll when the
+	// page is full.
+	var maxValue = this.pageSize > 1 ? this.maximumValue - this.pageSize : this.maximumValue;
+	var range = this.maximumValue - this.minimumValue;
+	var ratio = range / rect.width;
+	var gripSize = this.pageSize / ratio;
+	var span = rect.width - gripSize;
+
+	if (span == 0) return new CanvasUI.Rectangle(rect.x, rect.y, rect.width, rect.height);
+	if (this.value == this.minimumValue) return new CanvasUI.Rectangle(rect.x, rect.y, gripSize, rect.height);
+
+	range = maxValue - this.minimumValue;
+
+	var value = ((this.value - this.minimumValue) * span + range) / range;
+
+	return new CanvasUI.Rectangle(rect.x + value, rect.y, gripSize, rect.height);
+}
+
+CanvasUI.ScrollbarHorizontal.prototype.setValue = function(value) {
 	var oldValue = this.value;
 
 	this.value = value;

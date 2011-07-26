@@ -60,13 +60,21 @@ function init(canvasId) {
 	listbox.addOption("text 12", 11);
 	window3.children.add(listbox);
 
-	var scrollbar = new CanvasUI.Scrollbar(rect.x + 100, rect.y + 40, 30, 100);
-	window3.children.add(scrollbar);
+	var scrollbarVertical = new CanvasUI.ScrollbarVertical(rect.x + 100, rect.y + 40, 30, 100);
+	window3.children.add(scrollbarVertical);
 
-	scrollbar.maximumValue = 10;
-	scrollbar.minimumValue = 0;
-	scrollbar.pageSize = 5;
-	scrollbar.value = 1;
+	scrollbarVertical.maximumValue = 10;
+	scrollbarVertical.minimumValue = 0;
+	scrollbarVertical.pageSize = 5;
+	scrollbarVertical.value = 0;
+
+	var scrollbarHorizontal = new CanvasUI.ScrollbarHorizontal(rect.x, rect.y + 140, 100, 30);
+	window3.children.add(scrollbarHorizontal);
+
+	scrollbarHorizontal.maximumValue = 10;
+	scrollbarHorizontal.minimumValue = 0;
+	scrollbarHorizontal.pageSize = 5;
+	scrollbarHorizontal.value = 1;
 }
 
 		</script>
