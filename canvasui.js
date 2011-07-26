@@ -690,7 +690,7 @@ CanvasUI.Graphics.prototype.drawBevelledRect = function(rect, lightColour, darkC
  */
 CanvasUI.Graphics.prototype.drawRect = function(rect, colour) {
 	if (this.context == null) return;
-	
+
 	this.fillRect(new CanvasUI.Rectangle(rect.x, rect.y, rect.width, 1), colour);
 	this.fillRect(new CanvasUI.Rectangle(rect.x, rect.y, 1, rect.height), colour);
 	this.fillRect(new CanvasUI.Rectangle(rect.x + rect.width - 1, rect.y, 1, rect.height), colour);
@@ -733,7 +733,7 @@ CanvasUI.Graphics.prototype.getTextWidth = function(text) {
 	if (this.context == null) return 0;
 	
 	this.context.save();
-	this.context.font = this.fontSize + ', ' + this.fontFamily;
+	this.context.font = this.fontSize + ' ' + this.fontFamily;
 	var width = this.context.measureText(text).width
 	this.context.restore();
 	
@@ -758,6 +758,34 @@ CanvasUI.Graphics.prototype.fillRect = function(rect, colour) {
 	this.context.clip();
 	
 	this.context.fillStyle = colour;
+	this.context.fillRect(x, y, rect.width, rect.height);
+	this.context.closePath();
+	this.context.restore();
+}
+
+CanvasUI.Graphics.prototype.fillGradientRect = function(rect, gradientX1, gradientY1, gradientX2, gradientY2, colourStops) {
+	if (this.context == null) return;
+	
+	// Compensate for graphics offset
+	var x = rect.x + this.x;
+	var y = rect.y + this.y;
+
+	gradientX1 += this.x;
+	gradientY1 += this.y;
+	gradientX2 += this.x;
+	gradientY2 += this.y;
+
+	this.context.save();
+	this.context.beginPath();
+	this.context.rect(this.clipRect.x, this.clipRect.y, this.clipRect.width, this.clipRect.height);
+	this.context.clip();
+
+	var gradient = this.context.createLinearGradient(gradientX1, gradientY1, gradientX2, gradientY2);
+	for (var i in colourStops) {
+		gradient.addColorStop(colourStops[i].offset, colourStops[i].colour);
+	}
+	
+	this.context.fillStyle = gradient;
 	this.context.fillRect(x, y, rect.width, rect.height);
 	this.context.closePath();
 	this.context.restore();
@@ -1632,13 +1660,29 @@ CanvasUI.Button.prototype.drawBackground = function(gfx) {
 	if (this.clicked) {
 		gfx.fillRect(drawRect, this.darkColour);
 		gfx.fillText(this.text, textX, textY, this.shineColour);
-	} else if (this.isEnabled()) {
-		gfx.fillRect(drawRect, this.backColour);
-		gfx.fillText(this.text, textX, textY, this.shadowColour);
 	} else {
-		gfx.fillRect(drawRect, this.backColour);
-		gfx.fillText(this.text, textX + 1, textY + 1, this.shadowColour);
-		gfx.fillText(this.text, textX, textY, this.shineColour);
+
+		var colour1 = '#eee';
+		var colour2 = '#ddd';
+		var colour3 = '#ccc';
+		
+		// Draw top
+		gfx.fillGradientRect(drawRect, 0, 0, 0, drawRect.height,
+			[
+				{ offset: 0, colour: colour1 },
+				{ offset: 0.1, colour: colour2 },
+				{ offset: 1, colour: colour3 }
+			]
+		);
+
+		//gfx.fillRect(drawRect, this.backColour);
+
+		if (this.isEnabled()) {
+			gfx.fillText(this.text, textX, textY, this.shadowColour);
+		} else {
+			gfx.fillText(this.text, textX + 1, textY + 1, this.shadowColour);
+			gfx.fillText(this.text, textX, textY, this.shineColour);
+		}
 	}
 }
 
@@ -1670,11 +1714,21 @@ CanvasUI.WindowCloseButton.prototype.constructor = CanvasUI.WindowCloseButton;
 CanvasUI.WindowCloseButton.prototype.drawBackground = function(gfx) {
 	var drawRect = new CanvasUI.Rectangle(0, 0, this.rect.width, this.rect.height);
 	
-	var colour = this.parent.focused ? this.highlightColour : '#ddf';
-	colour = this.parent.dragged ? '#88f' : colour;
+	// Choose colour based on focus
+	var colour1 = this.parent.focused ? '#ddf' : '#eef';
+	var colour2 = this.parent.focused ? '#99f' : '#bbf';
+	var colour3 = this.parent.focused ? '#88f' : '#aaf';
 	
-	gfx.fillRect(drawRect, colour);
-	gfx.fillRect(drawRect, colour);
+	// Draw top
+	gfx.fillGradientRect(drawRect, 0, 0, 0, drawRect.height,
+		[
+			{ offset: 0, colour: colour1 },
+			{ offset: 0.2, colour: colour2 },
+			{ offset: 1, colour: colour3 }
+		]
+	);
+	
+	//gfx.fillRect(drawRect, colour);
 	var quarterWidth = (this.rect.height / 4);
 	var quarterHeight = (this.rect.height / 4);
 	var glyphWidth = (this.rect.width / 2);
@@ -1710,11 +1764,20 @@ CanvasUI.WindowDepthButton.prototype.constructor = CanvasUI.WindowDepthButton;
 CanvasUI.WindowDepthButton.prototype.drawBackground = function(gfx) {
 	var drawRect = new CanvasUI.Rectangle(0, 0, this.rect.width, this.rect.height);
 	
-	var colour = this.parent.focused ? this.highlightColour : '#ddf';
-	colour = this.parent.dragged ? '#88f' : colour;
+	// Choose colour based on focus
+	var colour1 = this.parent.focused ? '#ddf' : '#eef';
+	var colour2 = this.parent.focused ? '#99f' : '#bbf';
+	var colour3 = this.parent.focused ? '#88f' : '#aaf';
 	
-	gfx.fillRect(drawRect, colour);
-	gfx.fillRect(drawRect, colour);
+	// Draw top
+	gfx.fillGradientRect(drawRect, 0, 0, 0, drawRect.height,
+		[
+			{ offset: 0, colour: colour1 },
+			{ offset: 0.2, colour: colour2 },
+			{ offset: 1, colour: colour3 }
+		]
+	);
+
 	var quarterWidth = (this.rect.height / 4);
 	var quarterHeight = (this.rect.height / 4);
 	var glyphWidth = (this.rect.width / 3);
@@ -1750,7 +1813,7 @@ CanvasUI.Window.prototype.constructor = CanvasUI.Window;
  */
 CanvasUI.Window.prototype.drawBackground = function(gfx) {
 	var drawRect = new CanvasUI.Rectangle(0, 0, this.rect.width, this.rect.height);
-	gfx.fillRect(drawRect, this.backColour);
+	gfx.fillGradientRect(drawRect, 0, 0, this.rect.width, this.rect.height, [{ offset: 0, colour: '#000' }, { offset: 1, colour: '#555' }]);
 }
 
 /**
@@ -1765,26 +1828,32 @@ CanvasUI.Window.prototype.drawBorder = function(gfx) {
 	var bottomRect = new CanvasUI.Rectangle(0, this.rect.height - this.borderSize.bottom, this.rect.width, this.borderSize.bottom);
 	
 	// Choose border colour based on focus
-	var borderColour = this.focused ? this.highlightColour : '#ddf';
-	
-	// Update border colour based on drag
-	borderColour = this.dragged ? '#88f' : borderColour;
+	var colour1 = this.focused ? '#ddf' : '#eef';
+	var colour2 = this.focused ? '#99f' : '#bbf';
+	var colour3 = this.focused ? '#88f' : '#aaf';
 	
 	// Draw left
-	gfx.fillRect(leftRect, borderColour);
+	gfx.fillRect(leftRect, colour3);
 	
 	// Draw right
-	gfx.fillRect(rightRect, borderColour);
+	gfx.fillRect(rightRect, colour3);
 	
 	// Draw top
-	gfx.fillRect(titleRect, borderColour);
+	gfx.fillGradientRect(titleRect, 0, 0, 0, titleRect.height,
+		[
+			{ offset: 0, colour: colour1 },
+			{ offset: 0.2, colour: colour2 },
+			{ offset: 1, colour: colour3 }
+		]
+	);
+
 	var fontHeight = parseInt(gfx.fontSize);
 	var titleX = ((this.getWidth() - this.children.at(0).getWidth() - this.children.at(1).getWidth() - gfx.getTextWidth(this.title)) / 2) + this.children.at(0).getWidth();
 	var titleY = this.borderSize.top - (fontHeight / 2);
 	gfx.fillText(this.title, titleX, titleY, this.shadowColour);
 	
 	// Draw bottom
-	gfx.fillRect(bottomRect, borderColour);
+	gfx.fillRect(bottomRect, colour3);
 	
 	// Draw inner bevelled rect
 	var innerRect = this.getClientRect();

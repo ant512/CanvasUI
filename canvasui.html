@@ -10,14 +10,14 @@ function init(canvasId) {
 	var canvas = document.getElementById(canvasId);
 	ui = new CanvasUI.Gui(canvas);
 	
-	var window1 = new CanvasUI.Window("Window 1", 10, 10, 60, 60);
+	var window1 = new CanvasUI.Window("Window 1", 10, 10, 250, 150);
 	ui.children.add(window1);
 	
 	var rect = window1.getClientRect();
 	var window1button1 = new CanvasUI.Button("Button 1", rect.x, rect.y, 30, 30);
 	window1.children.add(window1button1);
 		
-	var window2 = new CanvasUI.Window("Window 2", 20, 20, 100, 100);
+	var window2 = new CanvasUI.Window("Window 2", 20, 20, 300, 200);
 	ui.children.add(window2);
 		
 	var window3 = new CanvasUI.Window("Window 3", 50, 50, 200, 200);
@@ -60,6 +60,6 @@ function init(canvasId) {
 	</head>
 	
 	<body onload="init('canvas')">
-		<canvas id="canvas" width="400" height="400"></canvas>
+		<canvas id="canvas" width="600" height="400"></canvas>
 	</body>
 </html>
