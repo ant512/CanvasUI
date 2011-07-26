@@ -14,14 +14,14 @@ function init(canvasId) {
 	ui.children.add(window1);
 	
 	var rect = window1.getClientRect();
-	var window1button1 = new CanvasUI.Button("Button 1", rect.x, rect.y, 30, 30);
+	var window1button1 = new CanvasUI.Button("Button 1", 0, 0, 30, 30);
 	window1.children.add(window1button1);
 		
 	var window2 = new CanvasUI.Window("Window 2", 20, 20, 300, 200);
 	ui.children.add(window2);
 
 	rect = window2.getClientRect();
-	var window2label1 = new CanvasUI.Label("label", rect.x + 20, rect.y + 20, 50, 20);
+	var window2label1 = new CanvasUI.Label("label", 20, 20, 50, 20);
 	window2.children.add(window2label1);
 		
 	var window3 = new CanvasUI.Window("Window 3", 50, 50, 300, 200);
@@ -29,10 +29,10 @@ function init(canvasId) {
 	//window3.enabled = false;
 	
 	rect = window3.getClientRect();
-	var window3button1 = new CanvasUI.Button("some text", rect.x, rect.y, 100, 20);
+	var window3button1 = new CanvasUI.Button("some text", 0, 0, 100, 20);
 	window3.children.add(window3button1);
 		
-	var window3button2 = new CanvasUI.Button("a button", rect.x, rect.y + 20, 100, 20);
+	var window3button2 = new CanvasUI.Button("a button", 0, 20, 100, 20);
 	window3.children.add(window3button2);
 	window3button2.enabled = false;
 		
@@ -45,7 +45,7 @@ function init(canvasId) {
 		alert('Released ' + gadget.text);
 	}
 	
-	var listbox = new CanvasUI.ListBox(rect.x, rect.y + 40, 100, 100);
+	var listbox = new CanvasUI.ListBox(0, 40, 100, 100);
 	listbox.addOption("text 1", 0);
 	listbox.addOption("text 2", 1);
 	listbox.addOption("text 3", 2);
@@ -60,7 +60,7 @@ function init(canvasId) {
 	listbox.addOption("text 12", 11);
 	window3.children.add(listbox);
 
-	var scrollbarVertical = new CanvasUI.ScrollbarVertical(rect.x + 100, rect.y + 40, 30, 100);
+	var scrollbarVertical = new CanvasUI.ScrollbarVertical(100, 40, 30, 100);
 	window3.children.add(scrollbarVertical);
 
 	scrollbarVertical.maximumValue = 10;
@@ -68,7 +68,7 @@ function init(canvasId) {
 	scrollbarVertical.pageSize = 5;
 	scrollbarVertical.value = 0;
 
-	var scrollbarHorizontal = new CanvasUI.ScrollbarHorizontal(rect.x, rect.y + 140, 100, 30);
+	var scrollbarHorizontal = new CanvasUI.ScrollbarHorizontal(0, 140, 100, 30);
 	window3.children.add(scrollbarHorizontal);
 
 	scrollbarHorizontal.maximumValue = 10;
@@ -76,7 +76,7 @@ function init(canvasId) {
 	scrollbarHorizontal.pageSize = 5;
 	scrollbarHorizontal.value = 0;
 
-	var window3label1 = new CanvasUI.Label("", rect.x + 100, rect.y + 140, 30, 30);
+	var window3label1 = new CanvasUI.Label("", 100, 140, 30, 30);
 	window3label1.id = 1;
 	window3.children.add(window3label1);
 
@@ -84,7 +84,6 @@ function init(canvasId) {
 		gadget.parent.children.getGadgetById(1).setText(parseInt(gadget.value));
 	}
 }
-
 		</script>
 	</head>
 	

@@ -302,7 +302,7 @@ var CanvasUI = {
 		this.borderSize.bottom = 6;
 		this.borderSize.left = 6;
 		
-		var closeButton = new CanvasUI.WindowCloseButton(0, 0, this.borderSize.top, this.borderSize.top);
+		var closeButton = new CanvasUI.WindowCloseButton(-this.borderSize.left, -this.borderSize.top, this.borderSize.top, this.borderSize.top);
 		this.children.add(closeButton);
 		
 		// Define release event for close button
@@ -310,7 +310,7 @@ var CanvasUI = {
 			gadget.parent.close();
 		}
 		
-		var depthButton = new CanvasUI.WindowDepthButton(this.rect.width - this.borderSize.top, 0, this.borderSize.top, this.borderSize.top);
+		var depthButton = new CanvasUI.WindowDepthButton(this.rect.width - this.borderSize.top - this.borderSize.left, -this.borderSize.top, this.borderSize.top, this.borderSize.top);
 		this.children.add(depthButton);
 		
 		// Define release for depth button
@@ -971,7 +971,7 @@ CanvasUI.GadgetCollection.prototype.getGadgetById = function(id) {
  */
 CanvasUI.Gadget.prototype.getX = function() {
 	if (this.parent != null) {
-		return this.rect.x + this.parent.getX();
+		return this.rect.x + this.parent.getX() + this.parent.borderSize.left;
 	}
 	
 	return this.rect.x;
@@ -983,7 +983,7 @@ CanvasUI.Gadget.prototype.getX = function() {
  */
 CanvasUI.Gadget.prototype.getY = function() {
 	if (this.parent != null) {
-		return this.rect.y + this.parent.getY();
+		return this.rect.y + this.parent.getY() + this.parent.borderSize.top;
 	}
 	
 	return this.rect.y;
@@ -2047,7 +2047,12 @@ CanvasUI.ScrollbarVertical.prototype.drawBackground = function(gfx) {
 	
 	var colour = this.dragged ? '#888' : '#555';
 
-	gfx.fillRect(this.getGripRect(), colour);
+	var gripRect = this.getGripRect();
+	var rect = this.getClientRect();
+	gripRect.x += rect.x;
+	gripRect.y += rect.y;
+
+	gfx.fillRect(gripRect, colour);
 }
 
 /**
@@ -2112,14 +2117,14 @@ CanvasUI.ScrollbarVertical.prototype.getGripRect = function() {
 	var gripSize = this.pageSize / ratio;
 	var span = rect.height - gripSize;
 
-	if (span == 0) return new CanvasUI.Rectangle(rect.x, rect.y, rect.width, rect.height);
-	if (this.value == this.minimumValue) return new CanvasUI.Rectangle(rect.x, rect.y, rect.width, gripSize);
+	if (span == 0) return new CanvasUI.Rectangle(0, 0, rect.width, rect.height);
+	if (this.value == this.minimumValue) return new CanvasUI.Rectangle(0, 0, rect.width, gripSize);
 
 	range = maxValue - this.minimumValue;
 
 	var value = ((this.value - this.minimumValue) * span + range) / range;
 
-	return new CanvasUI.Rectangle(rect.x, rect.y + value, rect.width, gripSize);
+	return new CanvasUI.Rectangle(0, value, rect.width, gripSize);
 }
 
 CanvasUI.ScrollbarVertical.prototype.setValue = function(value) {
@@ -2158,7 +2163,12 @@ CanvasUI.ScrollbarHorizontal.prototype.drawBackground = function(gfx) {
 	
 	var colour = this.dragged ? '#888' : '#555';
 
-	gfx.fillRect(this.getGripRect(), colour);
+	var gripRect = this.getGripRect();
+	var rect = this.getClientRect();
+	gripRect.x += rect.x;
+	gripRect.y += rect.y;
+
+	gfx.fillRect(gripRect, colour);
 }
 
 /**
@@ -2223,14 +2233,14 @@ CanvasUI.ScrollbarHorizontal.prototype.getGripRect = function() {
 	var gripSize = this.pageSize / ratio;
 	var span = rect.width - gripSize;
 
-	if (span == 0) return new CanvasUI.Rectangle(rect.x, rect.y, rect.width, rect.height);
-	if (this.value == this.minimumValue) return new CanvasUI.Rectangle(rect.x, rect.y, gripSize, rect.height);
+	if (span == 0) return new CanvasUI.Rectangle(0, 0, rect.width, rect.height);
+	if (this.value == this.minimumValue) return new CanvasUI.Rectangle(0, 0, gripSize, rect.height);
 
 	range = maxValue - this.minimumValue;
 
 	var value = ((this.value - this.minimumValue) * span + range) / range;
 
-	return new CanvasUI.Rectangle(rect.x + value, rect.y, gripSize, rect.height);
+	return new CanvasUI.Rectangle(value, 0, gripSize, rect.height);
 }
 
 CanvasUI.ScrollbarHorizontal.prototype.setValue = function(value) {
