@@ -24,6 +24,7 @@ var CanvasUI = {
 		this.darkColour = '#555';
 		this.highlightColour = '#aaf';
 		this.focusedGadget = null;
+		this.id = 0;
 		
 		this.rect = new CanvasUI.Rectangle(x, y, width, height);
 		this.children = new CanvasUI.GadgetCollection(this);
@@ -947,6 +948,20 @@ CanvasUI.GadgetCollection.prototype.getGadgetIndex = function(gadget) {
 	return -1;
 }
 
+/**
+ * Locate gadget in list by ID.
+ * @param id The ID of the gadget to find.
+ * @return The gadget, or null if the gadget is not found.
+ */
+CanvasUI.GadgetCollection.prototype.getGadgetById = function(id) {
+	for (var i in this.list) {
+		if (this.list[i].id == id) {
+			return this.list[i];
+		}
+	}
+	
+	return null;
+}
 
 /** Gadget Methods **/
 
@@ -1658,6 +1673,15 @@ CanvasUI.Label.prototype.drawBackground = function(gfx) {
  */
 CanvasUI.Label.prototype.drawBorder = function(gfx) { }
 
+/**
+ * Changes the label text.
+ * @param text The new label text.
+ */
+CanvasUI.Label.prototype.setText = function(text) {
+	this.text = text;
+	this.markRectsDamaged();
+}
+
 
 /** Button Methods **/
 
@@ -2021,7 +2045,7 @@ CanvasUI.ScrollbarVertical.prototype.drawBackground = function(gfx) {
 	var drawRect = new CanvasUI.Rectangle(0, 0, this.rect.width, this.rect.height);
 	gfx.fillRect(drawRect, this.backColour);
 	
-	var colour = this.dragged ? '#fff' : '#555';
+	var colour = this.dragged ? '#888' : '#555';
 
 	gfx.fillRect(this.getGripRect(), colour);
 }
@@ -2132,7 +2156,7 @@ CanvasUI.ScrollbarHorizontal.prototype.drawBackground = function(gfx) {
 	var drawRect = new CanvasUI.Rectangle(0, 0, this.rect.width, this.rect.height);
 	gfx.fillRect(drawRect, this.backColour);
 	
-	var colour = this.dragged ? '#fff' : '#555';
+	var colour = this.dragged ? '#888' : '#555';
 
 	gfx.fillRect(this.getGripRect(), colour);
 }

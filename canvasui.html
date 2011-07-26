@@ -24,7 +24,7 @@ function init(canvasId) {
 	var window2label1 = new CanvasUI.Label("label", rect.x + 20, rect.y + 20, 50, 20);
 	window2.children.add(window2label1);
 		
-	var window3 = new CanvasUI.Window("Window 3", 50, 50, 200, 200);
+	var window3 = new CanvasUI.Window("Window 3", 50, 50, 300, 200);
 	ui.children.add(window3);
 	//window3.enabled = false;
 	
@@ -74,7 +74,15 @@ function init(canvasId) {
 	scrollbarHorizontal.maximumValue = 10;
 	scrollbarHorizontal.minimumValue = 0;
 	scrollbarHorizontal.pageSize = 5;
-	scrollbarHorizontal.value = 1;
+	scrollbarHorizontal.value = 0;
+
+	var window3label1 = new CanvasUI.Label("", rect.x + 100, rect.y + 140, 30, 30);
+	window3label1.id = 1;
+	window3.children.add(window3label1);
+
+	scrollbarHorizontal.onValueChange = function(gadget) {
+		gadget.parent.children.getGadgetById(1).setText(parseInt(gadget.value));
+	}
 }
 
 		</script>
