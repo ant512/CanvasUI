@@ -19,6 +19,10 @@ function init(canvasId) {
 		
 	var window2 = new CanvasUI.Window("Window 2", 20, 20, 300, 200);
 	ui.children.add(window2);
+
+	rect = window2.getClientRect();
+	var window2label1 = new CanvasUI.Label("label", rect.x + 20, rect.y + 20, 50, 20);
+	window2.children.add(window2label1);
 		
 	var window3 = new CanvasUI.Window("Window 3", 50, 50, 200, 200);
 	ui.children.add(window3);

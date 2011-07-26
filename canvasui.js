@@ -239,6 +239,28 @@ var CanvasUI = {
 		this.borderSize.bottom = 1;
 		this.borderSize.left = 1;
 	},
+
+	/**
+	 * Label that displays text.
+	 * @param text The label text.
+	 * @param x The x co-ordinate of the gadget, relative to its parent.
+	 * @param y The y co-ordinate of the gadget, relataive to its parent.
+	 * @param width The width of the gadget.
+	 * @param height The height of the gadget.
+	 */
+	Label: function(text, x, y, width, height) {
+
+		// Call base constructor
+		CanvasUI.Gadget.prototype.constructor.call(this, x, y, width, height);
+		
+		this.text = text;
+		this.draggable = false;
+		
+		this.borderSize.top = 1;
+		this.borderSize.right = 1;
+		this.borderSize.bottom = 1;
+		this.borderSize.left = 1;
+	},
 	
 	/**
 	 * Clickable button that closes its containing window.
@@ -1224,7 +1246,7 @@ CanvasUI.Gadget.prototype.draw = function(rect) {
 	// Enable this to draw rects around all clipping regions
 	gfx.context.save();
 	gfx.context.beginPath();
-	gfx.context.rect(0, 0, 400, 400);
+	gfx.context.rect(0, 0, gfx.canvas.width, gfx.canvas.height);
 	gfx.context.clip();
 	
 	gfx.context.strokeStyle = '#f00';
@@ -1641,6 +1663,50 @@ CanvasUI.Gui.prototype.startTimer = function() {
 }
 
 
+/** Label Methods **/
+
+CanvasUI.Label.prototype = new CanvasUI.Gadget;
+
+CanvasUI.Label.prototype.constructor = CanvasUI.Label;
+
+/**
+ * Draws the gadget.
+ * @param gfx The Graphics object to draw with.
+ */
+CanvasUI.Label.prototype.drawBackground = function(gfx) {
+	var drawRect = new CanvasUI.Rectangle(0, 0, this.rect.width, this.rect.height);
+	
+	var textX = (this.rect.width - gfx.getTextWidth(this.text)) / 2;
+	var textY = this.rect.height - (parseInt(gfx.fontSize) / 2);
+	
+	var colour1 = '#eee';
+	var colour2 = '#ddd';
+	var colour3 = '#ccc';
+	
+	// Draw top
+	gfx.fillGradientRect(drawRect, 0, 0, 0, drawRect.height,
+		[
+			{ offset: 0, colour: colour1 },
+			{ offset: 0.1, colour: colour2 },
+			{ offset: 1, colour: colour3 }
+		]
+	);
+
+	if (this.isEnabled()) {
+		gfx.fillText(this.text, textX, textY, this.shadowColour);
+	} else {
+		gfx.fillText(this.text, textX + 1, textY + 1, this.shadowColour);
+		gfx.fillText(this.text, textX, textY, this.shineColour);
+	}
+}
+
+/**
+ * Draws the gadget's border.
+ * @param gfx The Graphics object to draw with.
+ */
+CanvasUI.Label.prototype.drawBorder = function(gfx) { }
+
+
 /** Button Methods **/
 
 CanvasUI.Button.prototype = new CanvasUI.Gadget;
@@ -1674,8 +1740,6 @@ CanvasUI.Button.prototype.drawBackground = function(gfx) {
 				{ offset: 1, colour: colour3 }
 			]
 		);
-
-		//gfx.fillRect(drawRect, this.backColour);
 
 		if (this.isEnabled()) {
 			gfx.fillText(this.text, textX, textY, this.shadowColour);
