@@ -29,8 +29,15 @@ var CanvasUI = {
 		
 		this.rect = new CanvasUI.Rectangle(x, y, width, height);
 		this.children = new CanvasUI.GadgetCollection(this);
-		this.eventHandlers = new CanvasUI.GadgetEventHandlerList(this);
 		this.borderSize = new CanvasUI.BorderSize(0, 0, 0, 0);
+
+		this.onClick = null;
+		this.onRelease = null;
+		this.onReleaseOutside = null;
+		this.onDrag = null;
+		this.onFocus = null;
+		this.onBlur = null;
+		this.onValueChange = null;
 	},
 		
 	/**
@@ -57,15 +64,6 @@ var CanvasUI = {
 	},
 
 	/**
-	 * List of gadget event handlers.  Raises events to all handlers.
-	 * @param gadget The gadget that contains the list.
-	 */
-	GadgetEventHandlerList: function(gadget) {
-		this.owningGadget = gadget;
-		this.list = new Array();
-	},
-
-	/**
 	 * Graphics class for drawing to canvas.
 	 * @param x The x co-ordinate of the graphics object's origin relative to
 	 * the canvas it will draw to.
@@ -82,20 +80,6 @@ var CanvasUI = {
 		this.context = this.canvas == null ? null : this.canvas.getContext("2d");
 		this.fontSize = "12px";
 		this.fontFamily = "sans-serif";
-	},
-	
-	/**
-	 * Handles gadget events.  Should be subclassed and the handler methods
-	 * should be overridden.
-	 */
-	GadgetEventHandler: function() {
-		this.handleClickEvent = function(gadget, x, y) { }
-		this.handleReleaseEvent = function(gadget, x, y) { }
-		this.handleReleaseOutsideEvent = function(gadget, x, y) { }
-		this.handleDragEvent = function(gadget, x, y, dx, dy) { }
-		this.handleFocusEvent = function(gadget) { }
-		this.handleBlurEvent = function(gadget) { }
-		this.handleValueChangeEvent = function(gadget) { }
 	},
 	
 	/**
@@ -322,22 +306,18 @@ var CanvasUI = {
 		var closeButton = new CanvasUI.WindowCloseButton(0, 0, this.borderSize.top, this.borderSize.top);
 		this.children.add(closeButton);
 		
-		// Define event handler for close button
-		var eventHandler = new CanvasUI.GadgetEventHandler();
-		eventHandler.handleReleaseEvent = function(gadget, x, y) {
+		// Define release event for close button
+		closeButton.onRelease = function(gadget, x, y) {
 			gadget.parent.close();
 		}
-		closeButton.eventHandlers.addHandler(eventHandler);
 		
 		var depthButton = new CanvasUI.WindowDepthButton(this.rect.width - this.borderSize.top, 0, this.borderSize.top, this.borderSize.top);
 		this.children.add(depthButton);
 		
-		// Define event handler for depth button
-		eventHandler = new CanvasUI.GadgetEventHandler();
-		eventHandler.handleReleaseEvent = function(gadget, x, y) {
+		// Define release for depth button
+		depthButton.onRelease = function(gadget, x, y) {
 			gadget.parent.lowerToBottom();
 		}
-		depthButton.eventHandlers.addHandler(eventHandler);
 	},
 	
 	/**
@@ -828,100 +808,6 @@ CanvasUI.Graphics.prototype.fillGradientRect = function(rect, gradientX1, gradie
 }
 
 
-/** GadgetEventHandlerList Methods **/
-
-/**
- * Add a gadget event handler to the list.
- * @param handler The GadgetEventHandler to add to the list.
- */
-CanvasUI.GadgetEventHandlerList.prototype.addHandler = function(handler) { this.list.push(handler); }
-
-/**
- * Remove a gadget event handler from the list.
-  * @param handler The GadgetEventHandler to remove from the list.
- */
-CanvasUI.GadgetEventHandlerList.prototype.removeHandler = function(handler) {
-	for (var i in this.list) {
-		if (this.list[i] == handler) {
-			this.list.splice(i, 1);
-		}
-	}
-}
-		
-/**
- * Raise a click event to to all handlers in the list.
- * @param x The x co-ordinate of the click event.
- * @param y The y co-ordinate of the click event.
- */
-CanvasUI.GadgetEventHandlerList.prototype.raiseClickEvent = function(x, y) {
-	for (var i in this.list) {
-		this.list[i].handleClickEvent(this.owningGadget, x, y);
-	}
-}
-
-/**
- * Raise a release event to to all handlers in the list.
- * @param x The x co-ordinate of the release event.
- * @param y The y co-ordinate of the release event.
- */
-CanvasUI.GadgetEventHandlerList.prototype.raiseReleaseEvent = function(x, y) {
-	for (var i in this.list) {
-		this.list[i].handleReleaseEvent(this.owningGadget, x, y);
-	}
-}
-
-/**
- * Raise a release outside event to to all handlers in the list.
- * @param x The x co-ordinate of the release event.
- * @param y The y co-ordinate of the release event.
- */
-CanvasUI.GadgetEventHandlerList.prototype.raiseReleaseOutsideEvent = function(x, y) {
-	for (var i in this.list) {
-		this.list[i].handleReleaseOutsideEvent(this.owningGadget, x, y);
-	}
-}
-		
-/**
- * Raise a drag event to to all handlers in the list.
- * @param x The x co-ordinate of the drag event.
- * @param y The y co-ordinate of the drag event.
- * @param dx The x distance moved.
- * @param dy The y distance moved.
- */
-CanvasUI.GadgetEventHandlerList.prototype.raiseDragEvent = function(x, y, dx, dy) {
-	for (var i in this.list) {
-		this.list[i].handleDragEvent(this.owningGadget, x, y, dx, dy);
-	}
-}
-
-/**
- * Raise a focus event to to all handlers in the list.
- */
-CanvasUI.GadgetEventHandlerList.prototype.raiseFocusEvent = function() {
-	for (var i in this.list) {
-		this.list[i].handleFocusEvent(this.owningGadget);
-	}
-}
-
-/**
- * Raise a blur event to to all handlers in the list.
- */
-CanvasUI.GadgetEventHandlerList.prototype.raiseBlurEvent = function() {
-	for (var i in this.list) {
-		this.list[i].handleBlurEvent(this.owningGadget);
-	}
-}
-
-/**
- * Raise a value change event to to all handlers in the list.
- */
-CanvasUI.GadgetEventHandlerList.prototype.raiseValueChangeEvent = function() {
-	for (var i in this.list) {
-		this.list[i].handleValueChangeEvent(this.owningGadget);
-	}
-}
-
-
 /** GadgetCollection Methods **/
 
 /**
@@ -1364,7 +1250,7 @@ CanvasUI.Gadget.prototype.focus = function() {
 	this.markRectsDamaged();
 	
 	if (!hadFocus) {
-		this.eventHandlers.raiseFocusEvent();
+		if (this.onFocus != null) this.onFocus(this);
 		return true;
 	}
 	
@@ -1386,7 +1272,7 @@ CanvasUI.Gadget.prototype.blur = function() {
 	this.markRectsDamaged();
 	
 	if (hadFocus) {
-		this.eventHandlers.raiseBlurEvent();
+		if (this.onBlur != null) this.onBlur(this);
 		return true;
 	}
 	
@@ -1427,11 +1313,11 @@ CanvasUI.Gadget.prototype.click = function(x, y) {
 	this.grabX = x - this.rect.x;
 	this.grabY = y - this.rect.y;
 	
-	this.onClick(x, y);
+	this.processClick(x, y);
 	
 	this.markRectsDamaged();
 	
-	this.eventHandlers.raiseClickEvent(x, y);
+	if (this.onClick != null) this.onClick(this, x, y);
 	
 	return true;
 }
@@ -1442,7 +1328,7 @@ CanvasUI.Gadget.prototype.click = function(x, y) {
  * @param x The x co-ordinate of the click.
  * @param y The y co-ordinate of the click.
  */
-CanvasUI.Gadget.prototype.onClick = function(x, y) { }
+CanvasUI.Gadget.prototype.processClick = function(x, y) { }
 
 /**
  * Release the gadget at the specified co-ordinates.
@@ -1465,9 +1351,9 @@ CanvasUI.Gadget.prototype.release = function(x, y) {
 		
 		// Released within the gadget or outside?
 		if (this.checkPointCollision(x, y)) {
-			this.eventHandlers.raiseReleaseEvent(x, y);
+			if (this.onRelease != null) this.onRelease(this, x, y);
 		} else {
-			this.eventHandlers.raiseReleaseOutsideEvent(x, y);
+			if (this.onReleaseOutside != null) this.onReleaseOutside(this, x, y);
 		}
 		
 		return true;
@@ -1484,7 +1370,7 @@ CanvasUI.Gadget.prototype.release = function(x, y) {
  * @param dx The x distance moved.
  * @param dy The y distance moved.
  */
-CanvasUI.Gadget.prototype.onDrag = function(x, y, dx, dy) { }
+CanvasUI.Gadget.prototype.processDrag = function(x, y, dx, dy) { }
 
 /**
  * Drag the gadget.
@@ -1496,9 +1382,9 @@ CanvasUI.Gadget.prototype.onDrag = function(x, y, dx, dy) { }
 CanvasUI.Gadget.prototype.drag = function(x, y, dx, dy) {
 	
 	if (this.dragged) {
-		this.onDrag(x, y, dx, dy);
+		this.processDrag(x, y, dx, dy);
 		
-		this.eventHandlers.raiseDragEvent(x, y, dx, dy);
+		if (this.onDrag != null) this.onDrag(this, x, y, dx, dy);
 			
 		return true;
 	}
@@ -1806,7 +1692,6 @@ CanvasUI.WindowCloseButton.prototype.drawBackground = function(gfx) {
 		]
 	);
 	
-	//gfx.fillRect(drawRect, colour);
 	var quarterWidth = (this.rect.height / 4);
 	var quarterHeight = (this.rect.height / 4);
 	var glyphWidth = (this.rect.width / 2);
@@ -1951,7 +1836,7 @@ CanvasUI.Window.prototype.drawBorder = function(gfx) {
  * @param x The x co-ordinate of the click.
  * @param y The y co-ordinate of the click.
  */
-CanvasUI.Window.prototype.onClick = function(x, y) {
+CanvasUI.Window.prototype.processClick = function(x, y) {
 
 	// Ensure gadget is topmost in collection
 	this.raiseToTop();
@@ -1971,7 +1856,7 @@ CanvasUI.Window.prototype.onClick = function(x, y) {
  * @param dx The x distance moved.
  * @param dy The y distance moved.
  */
-CanvasUI.Window.prototype.onDrag = function(x, y, dx, dy) {
+CanvasUI.Window.prototype.processDrag = function(x, y, dx, dy) {
 	this.moveTo(x - this.grabX, y - this.grabY);
 }
 
@@ -2037,7 +1922,7 @@ CanvasUI.ListBox.prototype.addOption = function(text, value) {
  * @param dx The x distance moved.
  * @param dy The y distance moved.
  */
-CanvasUI.ListBox.prototype.onDrag = function(x, y, dx, dy) {
+CanvasUI.ListBox.prototype.processDrag = function(x, y, dx, dy) {
 	this.viewY -= dy;
 	if (this.viewY < 0) this.viewY = 0;
 	
@@ -2054,7 +1939,7 @@ CanvasUI.ListBox.prototype.onDrag = function(x, y, dx, dy) {
  * @param x The x co-ordinate of the click.
  * @param y The y co-ordinate of the click.
  */
-CanvasUI.ListBox.prototype.onClick = function(x, y) {
+CanvasUI.ListBox.prototype.processClick = function(x, y) {
 	this.dragged = true;
 	
 	// Get the click y co-ord relative to the gadget
@@ -2070,5 +1955,5 @@ CanvasUI.ListBox.prototype.onClick = function(x, y) {
 	// Toggle the item's selected state
 	this.options[index].selected = !this.options[index].selected;
 	
-	this.eventHandlers.raiseValueChangeEvent();
+	if (this.onValueChange != null) this.onValueChange(this);
 }

@@ -37,12 +37,13 @@ function init(canvasId) {
 	window3button2.enabled = false;
 		
 	// Define event handler for buttons
-	var eventHandler = new CanvasUI.GadgetEventHandler();
-	eventHandler.handleReleaseEvent = function(gadget, x, y) {
+	window3button1.onRelease = function(gadget, x, y) {
 		alert('Released ' + gadget.text);
 	}
-	window3button1.eventHandlers.addHandler(eventHandler);
-	window3button2.eventHandlers.addHandler(eventHandler);
+
+	window3button2.onRelease = function(gadget, x, y) {
+		alert('Released ' + gadget.text);
+	}
 	
 	var listbox = new CanvasUI.ListBox(rect.x, rect.y + 40, 100, 100);
 	listbox.addOption("text 1", 0);
