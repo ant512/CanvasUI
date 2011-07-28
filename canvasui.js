@@ -2324,7 +2324,12 @@ CanvasUI.TextBox.prototype.drawBackground = function(gfx) {
 	);
 
 	// Cursor
-	var cursorRect = new CanvasUI.Rectangle(textX, textY - parseInt(gfx.fontSize), gfx.getTextWidth(this.text.charAt(this.canvasIndex)), parseInt(gfx.fontSize));
+	var cursorX = textX + gfx.getTextWidth(this.text.substring(0, this.cursorIndex));
+	var cursorY = textY - parseInt(gfx.fontSize);
+	var cursorWidth = gfx.getTextWidth(this.text.charAt(this.cursorIndex));
+	var cursorHeight = parseInt(gfx.fontSize);
+
+	var cursorRect = new CanvasUI.Rectangle(cursorX, cursorY, cursorWidth, cursorHeight);
 	gfx.fillRect(cursorRect, '#99f');
 
 	// Text
