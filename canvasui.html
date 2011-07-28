@@ -63,10 +63,14 @@ function init(canvasId) {
 	var scrollbarVertical = new CanvasUI.ScrollbarVertical(100, 40, 30, 100);
 	window3.children.add(scrollbarVertical);
 
-	scrollbarVertical.maximumValue = 10;
+	scrollbarVertical.maximumValue = listbox.options.length;
 	scrollbarVertical.minimumValue = 0;
-	scrollbarVertical.pageSize = 5;
+	scrollbarVertical.pageSize = listbox.getClientRect().height / listbox.itemHeight;
 	scrollbarVertical.value = 0;
+
+	scrollbarVertical.onValueChange = function(gadget) {
+		listbox.setScrollPosition(gadget.value * listbox.itemHeight);
+	}
 
 	var scrollbarHorizontal = new CanvasUI.ScrollbarHorizontal(0, 140, 100, 30);
 	window3.children.add(scrollbarHorizontal);

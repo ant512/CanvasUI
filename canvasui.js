@@ -329,6 +329,8 @@ var CanvasUI = {
 	ListBox: function(x, y, width, height) {
 		CanvasUI.Gadget.prototype.constructor.call(this, x, y, width, height);
 		
+		this.draggable = false;
+
 		this.borderSize.top = 4;
 		this.borderSize.right = 4;
 		this.borderSize.bottom = 4;
@@ -1967,7 +1969,6 @@ CanvasUI.ListBox.prototype.drawBackground = function(gfx) {
 	gfx.fillRect(drawRect, this.backColour);
 	
 	var rect = this.getClientRect();
-	var itemHeight = (parseInt(gfx.fontSize) + this.spacing);
 	var itemY = rect.y;
 	var itemX = rect.x;
 	var itemWidth = rect.width;
@@ -2007,24 +2008,6 @@ CanvasUI.ListBox.prototype.addOption = function(text, value) {
 }
 
 /**
- * Called when the listbox is dragged.  Scrolls the option list.
- * @param x The x co-ordinate of the drag.
- * @param y The y co-ordinate of the drag.
- * @param dx The x distance moved.
- * @param dy The y distance moved.
- */
-CanvasUI.ListBox.prototype.processDrag = function(x, y, dx, dy) {
-	this.viewY -= dy;
-	if (this.viewY < 0) this.viewY = 0;
-	
-	var rect = this.getClientRect();
-	var maxY = (this.itemHeight * this.options.length) - rect.height;
-	
-	if (this.viewY > maxY) this.viewY = maxY;
-	this.markRectsDamaged();
-}
-
-/**
  * Called when the listbox is clicked.  Selects the clicked option and starts
  * the dragging system.
  * @param x The x co-ordinate of the click.
@@ -2043,6 +2026,17 @@ CanvasUI.ListBox.prototype.processClick = function(x, y) {
 	this.options[index].selected = !this.options[index].selected;
 	
 	if (this.onValueChange != null) this.onValueChange(this);
+}
+
+CanvasUI.ListBox.prototype.setScrollPosition = function(position) {
+	this.viewY = position;
+	if (this.viewY < 0) this.viewY = 0;
+	
+	var rect = this.getClientRect();
+	var maxY = (this.itemHeight * this.options.length) - rect.height;
+	
+	if (this.viewY > maxY) this.viewY = maxY;
+	this.markRectsDamaged();
 }
 
 
