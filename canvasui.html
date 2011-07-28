@@ -46,18 +46,11 @@ function init(canvasId) {
 	}
 	
 	var listbox = new CanvasUI.ListBox(0, 40, 100, 100);
-	listbox.addOption("text 1", 0);
-	listbox.addOption("text 2", 1);
-	listbox.addOption("text 3", 2);
-	listbox.addOption("text 4", 3);
-	listbox.addOption("text 5", 4);
-	listbox.addOption("text 6", 5);
-	listbox.addOption("text 7", 6);
-	listbox.addOption("text 8", 7);
-	listbox.addOption("text 9", 8);
-	listbox.addOption("text 10", 9);
-	listbox.addOption("text 11", 10);
-	listbox.addOption("text 12", 11);
+
+	for (var i = 0; i < 12; ++i) {
+		listbox.addOption("text " + (i + 1), i);
+	}
+
 	window3.children.add(listbox);
 
 	var scrollbarVertical = new CanvasUI.ScrollbarVertical(100, 40, 30, 100);
