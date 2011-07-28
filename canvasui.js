@@ -2441,7 +2441,10 @@ CanvasUI.TextBox.prototype.drawBackground = function(gfx) {
 	var cursorHeight = parseInt(gfx.fontSize);
 
 	var cursorRect = new CanvasUI.Rectangle(cursorX, cursorY, cursorWidth, cursorHeight);
-	gfx.fillRect(cursorRect, '#99f');
+
+	var cursorColour = this.focused ? '#99f' : '#aaa';
+
+	gfx.fillRect(cursorRect, cursorColour);
 
 	// Text
 	if (this.isEnabled()) {
@@ -2487,6 +2490,17 @@ CanvasUI.TextBox.prototype.processKeyDown = function(keyCode) {
 		case 37:
 			// Left arrow
 			this.moveCursorToIndex(this.cursorIndex - 1);
+			break;
+
+		case 46:
+			// Delete
+			var text = this.text.substring(0, this.cursorIndex);
+			text += this.text.substring(this.cursorIndex + 1, this.text.length);
+			this.text = text;
+
+			this.markRectsDamaged();
+
+			if (this.onValueChange != null) this.onValueChange();
 			break;
 
 		case 8:
