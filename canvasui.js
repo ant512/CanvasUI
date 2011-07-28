@@ -2204,8 +2204,6 @@ CanvasUI.ScrollbarVertical.prototype.processDrag = function(x, y, dx, dy) {
 	var ratio = range / rect.height;
 
 	this.setValue(this.value + (dy * ratio));
-
-	this.markRectsDamaged();
 }
 
 /**
@@ -2254,7 +2252,20 @@ CanvasUI.ScrollbarVertical.prototype.setValue = function(value) {
 	if (this.value < this.minimumValue) this.value = this.minimumValue;
 
 	if (oldValue != this.value) {
+		this.markRectsDamaged();
 		if (this.onValueChange != null) this.onValueChange(this);
+	}
+}
+
+/**
+ * Moves the grip if the cursor keys are pressed.
+ * @param keyCode The code of the key that was pressed.
+ */
+CanvasUI.ScrollbarVertical.prototype.processKeyDown = function(keyCode) {
+	if (keyCode == 40) {
+		this.setValue(this.value + 1);
+	} else if (keyCode == 38) {
+		this.setValue(this.value - 1);
 	}
 }
 
@@ -2328,8 +2339,6 @@ CanvasUI.ScrollbarHorizontal.prototype.processDrag = function(x, y, dx, dy) {
 	var ratio = range / rect.width;
 
 	this.setValue(this.value + (dx * ratio));
-
-	this.markRectsDamaged();
 }
 
 /**
@@ -2378,7 +2387,20 @@ CanvasUI.ScrollbarHorizontal.prototype.setValue = function(value) {
 	if (this.value < this.minimumValue) this.value = this.minimumValue;
 
 	if (oldValue != this.value) {
+		this.markRectsDamaged();
 		if (this.onValueChange != null) this.onValueChange(this);
+	}
+}
+
+/**
+ * Moves the grip if the cursor keys are pressed.
+ * @param keyCode The code of the key that was pressed.
+ */
+CanvasUI.ScrollbarHorizontal.prototype.processKeyDown = function(keyCode) {
+	if (keyCode == 39) {
+		this.setValue(this.value + 1);
+	} else if (keyCode == 37) {
+		this.setValue(this.value - 1);
 	}
 }
 
