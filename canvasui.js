@@ -2450,19 +2450,19 @@ CanvasUI.TextBox.prototype.drawBackground = function(gfx) {
 		gfx.fillText(this.text, textX + 1, textY + 1, this.shadowColour);
 		gfx.fillText(this.text, textX, textY, this.shineColour);
 	}
-
-	// Bevelled edges
-	var innerBevel = new CanvasUI.Rectangle(1, 1, drawRect.width - 2, drawRect.height - 2);
-
-	gfx.drawBevelledRect(innerBevel, this.shadowColour, this.shineColour);
-	gfx.drawBevelledRect(drawRect, this.shineColour, this.shadowColour);
 }
 
 /**
  * Draws the gadget's border.
  * @param gfx The Graphics object to draw with.
  */
-CanvasUI.TextBox.prototype.drawBorder = function(gfx) { }
+CanvasUI.TextBox.prototype.drawBorder = function(gfx) {
+	var drawRect = new CanvasUI.Rectangle(0, 0, this.rect.width, this.rect.height);
+	var innerBevel = new CanvasUI.Rectangle(1, 1, drawRect.width - 2, drawRect.height - 2);
+
+	gfx.drawBevelledRect(innerBevel, this.shadowColour, this.shineColour);
+	gfx.drawBevelledRect(drawRect, this.shineColour, this.shadowColour);
+}
 
 /**
  * Changes the label text.
