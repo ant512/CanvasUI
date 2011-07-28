@@ -121,7 +121,6 @@ var CanvasUI = {
 		this.canvas = canvas;			// Drawing space
 		this.topLevelGadget = null;		// Toplevel gadget
 		this.clickedGadget = null;		// Currently clicked gadget
-		this.focusedGadget = null;		// Currently focused gadget
 
 		this.oldMouseX = -1;			// Last observed mouse position
 		this.oldMouseY = -1;			// Last observed mouse position
@@ -183,6 +182,18 @@ var CanvasUI = {
 			this.oldMouseX = x;
 			this.oldMouseY = y;
 		}
+
+		CanvasUI.Gui.prototype.handleKeyDown = function(e) {
+			this.keyDown(e.keyCode);
+
+			this.damagedRectManager.redraw();
+		}
+
+		CanvasUI.Gui.prototype.handleKeyUp = function(e) {
+			this.keyUp(e.keyCode);
+
+			this.damagedRectManager.redraw();
+		}
 		
 		// Grab a pointer to the canvas and set up event handlers
 		var obj = this;
@@ -190,6 +201,8 @@ var CanvasUI = {
 		this.canvas.addEventListener("mouseup", function(e) { obj.handleRelease(e); }, false);
 		this.canvas.addEventListener("mouseout", function(e) { obj.handleRelease(e); }, false);
 		this.canvas.addEventListener("mousemove", function(e) { obj.handleDrag(e); }, false);
+		document.addEventListener("keydown", function(e) { obj.handleKeyDown(e); }, false);
+		document.addEventListener("keyup", function(e) { obj.handleKeyUp(e); }, false);
 		
 		this.timer = null;				// Timer that causes the gui to run
 										// essential recurring code
@@ -1444,6 +1457,44 @@ CanvasUI.Gadget.prototype.release = function(x, y) {
 }
 
 /**
+ * Send a keydown message to the gadget.
+ * @param keyCode The keycode to send to the gadget.
+ */
+CanvasUI.Gadget.prototype.keyDown = function(keyCode) {
+	if (this.focusedGadget != null) {
+		this.focusedGadget.keyDown(keyCode);
+	} else {
+		this.processKeyDown(keyCode);
+	}
+}
+
+/**
+ * Called when a keydown is received.  Should be overridden in subclasses to
+ * allow custom behaviour.
+ * @param keyCode The keycode to send to the gadget.
+ */
+CanvasUI.Gadget.prototype.processKeyDown = function(keyCode) { }
+
+/**
+ * Send a keyup message to the gadget.
+ * @param keyCode The keycode to send to the gadget.
+ */
+CanvasUI.Gadget.prototype.keyUp = function(keyCode) {
+	if (this.focusedGadget != null) {
+		this.focusedGadget.keyUp(keyCode);
+	} else {
+		this.processKeyUp(keyCode);
+	}
+}
+
+/**
+ * Called when a keyup is received.  Should be overridden in subclasses to
+ * allow custom behaviour.
+ * @param keyCode The keycode to send to the gadget.
+ */
+CanvasUI.Gadget.prototype.processKeyUp = function(keyCode) { }
+
+/**
  * Called when the gadget is dragged.  Should be overridden in subclasses to
  * allow custom drag behaviour.
  * @param x The x co-ordinate of the drag.
@@ -2353,5 +2404,29 @@ CanvasUI.TextBox.prototype.drawBorder = function(gfx) { }
  */
 CanvasUI.TextBox.prototype.setText = function(text) {
 	this.text = text;
+	this.markRectsDamaged();
+}
+
+/**
+ * Moves the cursor if the cursor keys are pressed.
+ * @param keyCode The code of the key that was pressed.
+ */
+CanvasUI.TextBox.prototype.processKeyDown = function(keyCode) {
+	if (keyCode == 39) {
+		this.moveCursorToIndex(this.cursorIndex + 1);
+	} else if (keyCode == 37) {
+		this.moveCursorToIndex(this.cursorIndex - 1);
+	}
+}
+
+/**
+ * Moves the cursor to the specified index within the displayed text.
+ * @param index The index to move the cursor to.
+ */
+CanvasUI.TextBox.prototype.moveCursorToIndex = function(index) {
+	this.cursorIndex = index;
+	if (this.cursorIndex >= this.text.length) this.cursorIndex = this.text.length - 1;
+	if (this.cursorIndex < 0) this.cursorIndex = 0;
+
 	this.markRectsDamaged();
 }
