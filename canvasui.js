@@ -2371,7 +2371,7 @@ CanvasUI.TextBox.prototype.drawBackground = function(gfx) {
 	// Cursor
 	var cursorX = textX + gfx.getTextWidth(this.text.substring(0, this.cursorIndex));
 	var cursorY = textY - parseInt(gfx.fontSize);
-	var cursorWidth = gfx.getTextWidth(this.text.charAt(this.cursorIndex));
+	var cursorWidth = this.cursorIndex == this.text.length ? gfx.getTextWidth(' ') : gfx.getTextWidth(this.text.charAt(this.cursorIndex));
 	var cursorHeight = parseInt(gfx.fontSize);
 
 	var cursorRect = new CanvasUI.Rectangle(cursorX, cursorY, cursorWidth, cursorHeight);
@@ -2425,7 +2425,7 @@ CanvasUI.TextBox.prototype.processKeyDown = function(keyCode) {
  */
 CanvasUI.TextBox.prototype.moveCursorToIndex = function(index) {
 	this.cursorIndex = index;
-	if (this.cursorIndex >= this.text.length) this.cursorIndex = this.text.length - 1;
+	if (this.cursorIndex > this.text.length) this.cursorIndex = this.text.length;
 	if (this.cursorIndex < 0) this.cursorIndex = 0;
 
 	this.markRectsDamaged();
