@@ -444,7 +444,7 @@ var CanvasUI = {
 		this.text = text;
 		this.draggable = false;
 
-		this.cursorIndex = 0;
+		this.cursorIndex = this.text.length;
 		
 		this.borderSize.top = 2;
 		this.borderSize.right = 2;
