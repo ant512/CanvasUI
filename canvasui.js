@@ -2104,6 +2104,10 @@ CanvasUI.ScrollbarVertical.prototype.processDrag = function(x, y, dx, dy) {
 	this.markRectsDamaged();
 }
 
+/**
+ * Gets the rect that describes the location and dimensions of the grip.
+ * @return The grip rect.
+ */
 CanvasUI.ScrollbarVertical.prototype.getGripRect = function() {
 	var rect = this.getClientRect();
 
@@ -2127,6 +2131,10 @@ CanvasUI.ScrollbarVertical.prototype.getGripRect = function() {
 	return new CanvasUI.Rectangle(0, value, rect.width, gripSize);
 }
 
+/**
+ * Sets the value represented by the grip.
+ * @param value The new value for the grip
+ */
 CanvasUI.ScrollbarVertical.prototype.setValue = function(value) {
 	var oldValue = this.value;
 
@@ -2220,6 +2228,10 @@ CanvasUI.ScrollbarHorizontal.prototype.processDrag = function(x, y, dx, dy) {
 	this.markRectsDamaged();
 }
 
+/**
+ * Gets the rect that describes the location and dimensions of the grip.
+ * @return The grip rect.
+ */
 CanvasUI.ScrollbarHorizontal.prototype.getGripRect = function() {
 	var rect = this.getClientRect();
 
@@ -2243,6 +2255,10 @@ CanvasUI.ScrollbarHorizontal.prototype.getGripRect = function() {
 	return new CanvasUI.Rectangle(value, 0, gripSize, rect.height);
 }
 
+/**
+ * Sets the value represented by the grip.
+ * @param value The new value for the grip
+ */
 CanvasUI.ScrollbarHorizontal.prototype.setValue = function(value) {
 	var oldValue = this.value;
 
