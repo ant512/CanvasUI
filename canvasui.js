@@ -25,6 +25,7 @@ var CanvasUI = {
 		this.highlightColour = '#aaf';
 		this.focusedGadget = null;
 		this.isFocusRectVisible = true;
+		this.permeable = false;
 		this.id = 0;
 		
 		this.rect = new CanvasUI.Rectangle(x, y, width, height);
@@ -120,6 +121,7 @@ var CanvasUI = {
 		this.draggable = false;
 
 		this.isFocusRectVisible = false;
+		this.permeable = true;
 		
 		this.canvas = canvas;			// Drawing space
 		this.topLevelGadget = null;		// Toplevel gadget
@@ -1657,7 +1659,7 @@ CanvasUI.Gadget.prototype.moveTo = function(x, y) {
 	this.hide();
 
 	// Prevent moving outside parent
-	if (this.parent != null) {
+	if (this.parent != null && !this.parent.permeable) {
 		var minX = this.parent.getMinChildX();
 		var maxX = this.parent.getMaxChildX() - this.rect.width + 1;
 		var minY = this.parent.getMinChildY();
