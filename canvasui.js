@@ -118,6 +118,8 @@ var CanvasUI = {
 		
 		// Set member values
 		this.draggable = false;
+
+		this.isFocusRectVisible = false;
 		
 		this.canvas = canvas;			// Drawing space
 		this.topLevelGadget = null;		// Toplevel gadget
