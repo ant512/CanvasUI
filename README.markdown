@@ -5,9 +5,12 @@ CanvasUI is a small javascript library for creating simple user interfaces
 with the HTML5 canvas tag.  Along side a complete API for creating new
 interface widgets, it features the following pre-built widgets:
 
- - Draggable windows
- - Buttons
- - List boxes
+ * Windows
+ * Buttons
+ * List boxes
+ * Scrollbars
+ * Labels
+ * Textboxes
 
 
 Requirements
