@@ -24,6 +24,7 @@ var CanvasUI = {
 		this.darkColour = '#555';
 		this.highlightColour = '#aaf';
 		this.focusedGadget = null;
+		this.isFocusRectVisible = true;
 		this.id = 0;
 		
 		this.rect = new CanvasUI.Rectangle(x, y, width, height);
@@ -256,6 +257,8 @@ var CanvasUI = {
 		this.borderSize.right = 1;
 		this.borderSize.bottom = 1;
 		this.borderSize.left = 1;
+
+		this.isFocusRectVisible = false;
 	},
 	
 	/**
@@ -275,6 +278,8 @@ var CanvasUI = {
 		this.borderSize.right = 1;
 		this.borderSize.bottom = 1;
 		this.borderSize.left = 1;
+
+		this.isFocusRectVisible = false;
 	},
 	
 	/**
@@ -294,6 +299,8 @@ var CanvasUI = {
 		this.borderSize.right = 1;
 		this.borderSize.bottom = 1;
 		this.borderSize.left = 1;
+
+		this.isFocusRectVisible = false;
 	},
 	
 	/**
@@ -314,6 +321,8 @@ var CanvasUI = {
 		this.borderSize.right = 6;
 		this.borderSize.bottom = 6;
 		this.borderSize.left = 6;
+
+		this.isFocusRectVisible = false;
 		
 		var closeButton = new CanvasUI.WindowCloseButton(-this.borderSize.left, -this.borderSize.top, this.borderSize.top, this.borderSize.top);
 		this.children.add(closeButton);
@@ -771,11 +780,23 @@ CanvasUI.Graphics.prototype.drawBevelledRect = function(rect, lightColour, darkC
  */
 CanvasUI.Graphics.prototype.drawRect = function(rect, colour) {
 	if (this.context == null) return;
+	
+	// Compensate for graphics offset
+	var x = rect.x + this.x;
+	var y = rect.y + this.y;
 
-	this.fillRect(new CanvasUI.Rectangle(rect.x, rect.y, rect.width, 1), colour);
-	this.fillRect(new CanvasUI.Rectangle(rect.x, rect.y, 1, rect.height), colour);
-	this.fillRect(new CanvasUI.Rectangle(rect.x + rect.width - 1, rect.y, 1, rect.height), colour);
-	this.fillRect(new CanvasUI.Rectangle(rect.x, rect.y + rect.height - 1, rect.width, 1), colour);
+	this.context.save();
+	this.context.beginPath();
+	this.context.rect(this.clipRect.x, this.clipRect.y, this.clipRect.width, this.clipRect.height);
+	this.context.clip();
+	
+	this.context.fillStyle = colour;
+	this.context.fillRect(x, y, rect.width, 1);
+	this.context.fillRect(x, y, 1, rect.height);
+	this.context.fillRect(x + rect.width - 1, y, 1, rect.height);
+	this.context.fillRect(x, y + rect.height - 1, rect.width, 1);
+	this.context.closePath();
+	this.context.restore();
 }
 
 /**
@@ -1234,6 +1255,14 @@ CanvasUI.Gadget.prototype.draw = function(rect) {
 
 	this.drawBackground(gfx);
 	this.drawBorder(gfx);
+
+	// Draw focus border around the gadget
+	if (this.focused && this.focusedGadget == null && this.isFocusRectVisible) {
+
+		var focusRect = new CanvasUI.Rectangle(0, 0, this.rect.width, this.rect.height);
+
+		gfx.drawRect(focusRect, "#00f");
+	}
 	
 	/*
 	// Enable this to draw rects around all clipping regions
@@ -1343,6 +1372,7 @@ CanvasUI.Gadget.prototype.focus = function() {
 	this.markRectsDamaged();
 	
 	if (!hadFocus) {
+		this.processFocus();
 		if (this.onFocus != null) this.onFocus(this);
 		return true;
 	}
@@ -1351,20 +1381,26 @@ CanvasUI.Gadget.prototype.focus = function() {
 }
 
 /**
+ * Called when focus is received.  Should be overridden in subclasses to allow
+ * custom focus behaviour.
+ */
+CanvasUI.Gadget.prototype.processFocus = function() { }
+
+/**
  * Remove focus from the current gadget.
  */
 CanvasUI.Gadget.prototype.blur = function() {
 	var hadFocus = this.focused;
 	this.focused = false;
 	
-	if (this.focusedGdget != null) {
+	if (this.focusedGadget != null) {
 		this.focusedGadget.blur();
 		this.focusedGadget = null;
 	}
 	
-	this.markRectsDamaged();
-	
 	if (hadFocus) {
+		this.markRectsDamaged();
+
 		if (this.onBlur != null) this.onBlur(this);
 		return true;
 	}
@@ -1982,15 +2018,21 @@ CanvasUI.Window.prototype.drawBorder = function(gfx) {
  */
 CanvasUI.Window.prototype.processClick = function(x, y) {
 
-	// Ensure gadget is topmost in collection
-	this.raiseToTop();
-
 	// Only drag if click within title bar
 	if (this.draggable) {
 		if (y < 0) {
 			this.dragged = true;
 		}
 	}
+}
+
+/**
+ * Jumps the window to the front when it receives focus.
+ */
+CanvasUI.Window.prototype.processFocus = function() {
+
+	// Ensure gadget is topmost in collection
+	this.raiseToTop();
 }
 
 /**
