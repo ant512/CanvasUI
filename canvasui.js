@@ -2474,7 +2474,7 @@ CanvasUI.TextBox.prototype.setText = function(text) {
 }
 
 /**
- * Moves the cursor if the cursor keys are pressed.
+ * Processes keyboard input.
  * @param keyCode The code of the key that was pressed.
  */
 CanvasUI.TextBox.prototype.processKeyDown = function(keyCode) {
@@ -2483,25 +2483,33 @@ CanvasUI.TextBox.prototype.processKeyDown = function(keyCode) {
 			// Right arrow
 			this.moveCursorToIndex(this.cursorIndex + 1);
 			break;
+
 		case 37:
 			// Left arrow
 			this.moveCursorToIndex(this.cursorIndex - 1);
 			break;
+
 		case 8:
 			// Backspace
 			var text = this.text.substring(0, this.cursorIndex - 1);
 			text += this.text.substring(this.cursorIndex, this.text.length);
 			this.text = text;
-			
+
 			this.moveCursorToIndex(this.cursorIndex - 1);
+
+			if (this.onValueChange != null) this.onValueChange();
 			break;
+
 		default:
+			// All other keys
 			var text = this.text.substring(0, this.cursorIndex);
 			text += String.fromCharCode(keyCode);
 			text += this.text.substring(this.cursorIndex, this.text.length);
 			this.text = text;
 
 			this.moveCursorToIndex(this.cursorIndex + 1);
+
+			if (this.onValueChange != null) this.onValueChange();
 			break;
 	}
 }
