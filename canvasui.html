@@ -13,14 +13,12 @@ function init(canvasId) {
 	var window1 = new CanvasUI.Window("Window 1", 10, 10, 250, 150);
 	ui.children.add(window1);
 	
-	var rect = window1.getClientRect();
 	var window1button1 = new CanvasUI.Button("Button 1", 0, 0, 60, 30);
 	window1.children.add(window1button1);
 		
 	var window2 = new CanvasUI.Window("Window 2", 20, 20, 300, 200);
 	ui.children.add(window2);
 
-	rect = window2.getClientRect();
 	var window2label1 = new CanvasUI.Label("label", 20, 20, 50, 20);
 	window2.children.add(window2label1);
 		
@@ -28,7 +26,6 @@ function init(canvasId) {
 	ui.children.add(window3);
 	//window3.enabled = false;
 	
-	rect = window3.getClientRect();
 	var window3button1 = new CanvasUI.Button("some text", 0, 0, 100, 20);
 	window3.children.add(window3button1);
 		
