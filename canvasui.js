@@ -186,14 +186,20 @@ var CanvasUI = {
 			this.oldMouseY = y;
 		}
 
+		CanvasUI.Gui.prototype.handleKeyPress = function(e) {
+			this.keyPress(e.charCode, e.shiftKey, e.altKey, e.altGraphKey, e.ctrlKey);
+
+			this.damagedRectManager.redraw();
+		}
+
 		CanvasUI.Gui.prototype.handleKeyDown = function(e) {
-			this.keyDown(e.keyCode);
+			this.keyDown(e.keyCode, e.shiftKey, e.altKey, e.altGraphKey, e.ctrlKey);
 
 			this.damagedRectManager.redraw();
 		}
 
 		CanvasUI.Gui.prototype.handleKeyUp = function(e) {
-			this.keyUp(e.keyCode);
+			this.keyUp(e.keyCode, e.shiftKey, e.altKey, e.altGraphKey, e.ctrlKey);
 
 			this.damagedRectManager.redraw();
 		}
@@ -204,6 +210,7 @@ var CanvasUI = {
 		this.canvas.addEventListener("mouseup", function(e) { obj.handleRelease(e); }, false);
 		this.canvas.addEventListener("mouseout", function(e) { obj.handleRelease(e); }, false);
 		this.canvas.addEventListener("mousemove", function(e) { obj.handleDrag(e); }, false);
+		document.addEventListener("keypress", function(e) { obj.handleKeyPress(e); }, false);
 		document.addEventListener("keydown", function(e) { obj.handleKeyDown(e); }, false);
 		document.addEventListener("keyup", function(e) { obj.handleKeyUp(e); }, false);
 		
@@ -1495,14 +1502,45 @@ CanvasUI.Gadget.prototype.release = function(x, y) {
 }
 
 /**
+ * Send a keypress message to the gadget.
+ * @param charCode The charcode to send to the gadget.
+ * @param isShiftHeld True if the shift key is held.
+ * @param isAltHeld True if the alt key is held.
+ * @param isAltGraphHeld True if the alt graph key is held.
+ * @param isCtrlHeldTrue if the ctrl key is held.
+ */
+CanvasUI.Gadget.prototype.keyPress = function(charCode, isShiftHeld, isAltHeld, isAltGraphHeld, isCtrlHeld) {
+	if (this.focusedGadget != null) {
+		this.focusedGadget.keyPress(charCode, isShiftHeld, isAltHeld, isAltGraphHeld, isCtrlHeld);
+	} else {
+		this.processKeyPress(charCode, isShiftHeld, isAltHeld, isAltGraphHeld, isCtrlHeld);
+	}
+}
+
+/**
+ * Called when a keydown is received.  Should be overridden in subclasses to
+ * allow custom behaviour.
+ * @param charCode The charcode to send to the gadget.
+ * @param isShiftHeld True if the shift key is held.
+ * @param isAltHeld True if the alt key is held.
+ * @param isAltGraphHeld True if the alt graph key is held.
+ * @param isCtrlHeldTrue if the ctrl key is held.
+ */
+CanvasUI.Gadget.prototype.processKeyPress = function(charCode, isShiftHeld, isAltHeld, isAltGraphHeld, isCtrlHeld) { }
+
+/**
  * Send a keydown message to the gadget.
  * @param keyCode The keycode to send to the gadget.
+ * @param isShiftHeld True if the shift key is held.
+ * @param isAltHeld True if the alt key is held.
+ * @param isAltGraphHeld True if the alt graph key is held.
+ * @param isCtrlHeldTrue if the ctrl key is held.
  */
-CanvasUI.Gadget.prototype.keyDown = function(keyCode) {
+CanvasUI.Gadget.prototype.keyDown = function(keyCode, isShiftHeld, isAltHeld, isAltGraphHeld, isCtrlHeld) {
 	if (this.focusedGadget != null) {
-		this.focusedGadget.keyDown(keyCode);
+		this.focusedGadget.keyDown(keyCode, isShiftHeld, isAltHeld, isAltGraphHeld, isCtrlHeld);
 	} else {
-		this.processKeyDown(keyCode);
+		this.processKeyDown(keyCode, isShiftHeld, isAltHeld, isAltGraphHeld, isCtrlHeld);
 	}
 }
 
@@ -1510,18 +1548,26 @@ CanvasUI.Gadget.prototype.keyDown = function(keyCode) {
  * Called when a keydown is received.  Should be overridden in subclasses to
  * allow custom behaviour.
  * @param keyCode The keycode to send to the gadget.
+ * @param isShiftHeld True if the shift key is held.
+ * @param isAltHeld True if the alt key is held.
+ * @param isAltGraphHeld True if the alt graph key is held.
+ * @param isCtrlHeldTrue if the ctrl key is held.
  */
-CanvasUI.Gadget.prototype.processKeyDown = function(keyCode) { }
+CanvasUI.Gadget.prototype.processKeyDown = function(keyCode, isShiftHeld, isAltHeld, isAltGraphHeld, isCtrlHeld) { }
 
 /**
  * Send a keyup message to the gadget.
  * @param keyCode The keycode to send to the gadget.
+ * @param isShiftHeld True if the shift key is held.
+ * @param isAltHeld True if the alt key is held.
+ * @param isAltGraphHeld True if the alt graph key is held.
+ * @param isCtrlHeldTrue if the ctrl key is held.
  */
-CanvasUI.Gadget.prototype.keyUp = function(keyCode) {
+CanvasUI.Gadget.prototype.keyUp = function(keyCode, isShiftHeld, isAltHeld, isAltGraphHeld, isCtrlHeld) {
 	if (this.focusedGadget != null) {
-		this.focusedGadget.keyUp(keyCode);
+		this.focusedGadget.keyUp(keyCode, isShiftHeld, isAltHeld, isAltGraphHeld, isCtrlHeld);
 	} else {
-		this.processKeyUp(keyCode);
+		this.processKeyUp(keyCode, isShiftHeld, isAltHeld, isAltGraphHeld, isCtrlHeld);
 	}
 }
 
@@ -1529,8 +1575,12 @@ CanvasUI.Gadget.prototype.keyUp = function(keyCode) {
  * Called when a keyup is received.  Should be overridden in subclasses to
  * allow custom behaviour.
  * @param keyCode The keycode to send to the gadget.
+ * @param isShiftHeld True if the shift key is held.
+ * @param isAltHeld True if the alt key is held.
+ * @param isAltGraphHeld True if the alt graph key is held.
+ * @param isCtrlHeldTrue if the ctrl key is held.
  */
-CanvasUI.Gadget.prototype.processKeyUp = function(keyCode) { }
+CanvasUI.Gadget.prototype.processKeyUp = function(keyCode, isShiftHeld, isAltHeld, isAltGraphHeld, isCtrlHeld) { }
 
 /**
  * Called when the gadget is dragged.  Should be overridden in subclasses to
@@ -2260,8 +2310,12 @@ CanvasUI.ScrollbarVertical.prototype.setValue = function(value) {
 /**
  * Moves the grip if the cursor keys are pressed.
  * @param keyCode The code of the key that was pressed.
+ * @param isShiftHeld True if the shift key is held.
+ * @param isAltHeld True if the alt key is held.
+ * @param isAltGraphHeld True if the alt graph key is held.
+ * @param isCtrlHeldTrue if the ctrl key is held.
  */
-CanvasUI.ScrollbarVertical.prototype.processKeyDown = function(keyCode) {
+CanvasUI.ScrollbarVertical.prototype.processKeyDown = function(keyCode, isShiftHeld, isAltHeld, isAltGraphHeld, isCtrlHeld) {
 	if (keyCode == 40) {
 		this.setValue(this.value + 1);
 	} else if (keyCode == 38) {
@@ -2395,8 +2449,12 @@ CanvasUI.ScrollbarHorizontal.prototype.setValue = function(value) {
 /**
  * Moves the grip if the cursor keys are pressed.
  * @param keyCode The code of the key that was pressed.
+ * @param isShiftHeld True if the shift key is held.
+ * @param isAltHeld True if the alt key is held.
+ * @param isAltGraphHeld True if the alt graph key is held.
+ * @param isCtrlHeldTrue if the ctrl key is held.
  */
-CanvasUI.ScrollbarHorizontal.prototype.processKeyDown = function(keyCode) {
+CanvasUI.ScrollbarHorizontal.prototype.processKeyDown = function(keyCode, isShiftHeld, isAltHeld, isAltGraphHeld, isCtrlHeld) {
 	if (keyCode == 39) {
 		this.setValue(this.value + 1);
 	} else if (keyCode == 37) {
@@ -2479,8 +2537,12 @@ CanvasUI.TextBox.prototype.setText = function(text) {
 /**
  * Processes keyboard input.
  * @param keyCode The code of the key that was pressed.
+ * @param isShiftHeld True if the shift key is held.
+ * @param isAltHeld True if the alt key is held.
+ * @param isAltGraphHeld True if the alt graph key is held.
+ * @param isCtrlHeldTrue if the ctrl key is held.
  */
-CanvasUI.TextBox.prototype.processKeyDown = function(keyCode) {
+CanvasUI.TextBox.prototype.processKeyDown = function(keyCode, isShiftHeld, isAltHeld, isAltGraphHeld, isCtrlHeld) {
 	switch (keyCode) {
 		case 39:
 			// Right arrow
@@ -2513,19 +2575,33 @@ CanvasUI.TextBox.prototype.processKeyDown = function(keyCode) {
 
 			if (this.onValueChange != null) this.onValueChange();
 			break;
-
-		default:
-			// All other keys
-			var text = this.text.substring(0, this.cursorIndex);
-			text += String.fromCharCode(keyCode);
-			text += this.text.substring(this.cursorIndex, this.text.length);
-			this.text = text;
-
-			this.moveCursorToIndex(this.cursorIndex + 1);
-
-			if (this.onValueChange != null) this.onValueChange();
-			break;
 	}
+}
+
+/**
+ * Processes keyboard input.
+ * @param keyCode The code of the key that was pressed.
+ * @param isShiftHeld True if the shift key is held.
+ * @param isAltHeld True if the alt key is held.
+ * @param isAltGraphHeld True if the alt graph key is held.
+ * @param isCtrlHeldTrue if the ctrl key is held.
+ */
+CanvasUI.TextBox.prototype.processKeyPress = function(keyCode, isShiftHeld, isAltHeld, isAltGraphHeld, isCtrlHeld) {
+
+	if (keyCode < 32) return;
+	if (keyCode > 127) return;
+
+	// Switch to lower-case if upper-case key pressed and shift not held
+	if (keyCode >= 65 && keyCode <= 90 && !isShiftHeld) keyCode += 0x20;
+
+	var text = this.text.substring(0, this.cursorIndex);
+	text += String.fromCharCode(keyCode);
+	text += this.text.substring(this.cursorIndex, this.text.length);
+	this.text = text;
+
+	this.moveCursorToIndex(this.cursorIndex + 1);
+
+	if (this.onValueChange != null) this.onValueChange();
 }
 
 /**
