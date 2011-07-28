@@ -399,9 +399,24 @@ var CanvasUI = {
 		this.maximumValue = 0;
 		this.pageSize = 0;
 		this.value = 0;
+	},
+
+	TextBox: function(text, x, y, width, height) {
+
+		// Call base constructor
+		CanvasUI.Gadget.prototype.constructor.call(this, x, y, width, height);
+		
+		this.text = text;
+		this.draggable = false;
+
+		this.cursorIndex = 0;
+		
+		this.borderSize.top = 2;
+		this.borderSize.right = 2;
+		this.borderSize.bottom = 2;
+		this.borderSize.left = 2;
 	}
 }
-
 
 
 /** DamagedRectManager Methods **/
@@ -1644,7 +1659,7 @@ CanvasUI.Label.prototype.drawBackground = function(gfx) {
 	var drawRect = new CanvasUI.Rectangle(0, 0, this.rect.width, this.rect.height);
 	
 	var textX = (this.rect.width - gfx.getTextWidth(this.text)) / 2;
-	var textY = this.rect.height - (parseInt(gfx.fontSize) / 2);
+	var textY = parseInt(gfx.fontSize) + ((this.rect.height - parseInt(gfx.fontSize)) / 2);
 	
 	var colour1 = '#eee';
 	var colour2 = '#ddd';
@@ -1697,7 +1712,7 @@ CanvasUI.Button.prototype.drawBackground = function(gfx) {
 	var drawRect = new CanvasUI.Rectangle(0, 0, this.rect.width, this.rect.height);
 	
 	var textX = (this.rect.width - gfx.getTextWidth(this.text)) / 2;
-	var textY = this.rect.height - (parseInt(gfx.fontSize) / 2);
+	var textY = parseInt(gfx.fontSize) + ((this.rect.height - parseInt(gfx.fontSize)) / 2);
 	
 	if (this.clicked) {
 		gfx.fillRect(drawRect, this.darkColour);
@@ -2276,4 +2291,68 @@ CanvasUI.ScrollbarHorizontal.prototype.setValue = function(value) {
 	if (oldValue != this.value) {
 		if (this.onValueChange != null) this.onValueChange(this);
 	}
+}
+
+
+/** TextBox Methods **/
+
+CanvasUI.TextBox.prototype = new CanvasUI.Gadget;
+
+CanvasUI.TextBox.prototype.constructor = CanvasUI.TextBox;
+
+/**
+ * Draws the gadget.
+ * @param gfx The Graphics object to draw with.
+ */
+CanvasUI.TextBox.prototype.drawBackground = function(gfx) {
+	var drawRect = new CanvasUI.Rectangle(0, 0, this.rect.width, this.rect.height);
+	
+	var textX = (this.rect.width - gfx.getTextWidth(this.text)) / 2;
+	var textY = parseInt(gfx.fontSize) + ((this.rect.height - parseInt(gfx.fontSize)) / 2);
+	
+	var colour1 = '#eee';
+	var colour2 = '#ddd';
+	var colour3 = '#ccc';
+	
+	// Draw top
+	gfx.fillGradientRect(drawRect, 0, 0, 0, drawRect.height,
+		[
+			{ offset: 0, colour: colour1 },
+			{ offset: 0.1, colour: colour2 },
+			{ offset: 1, colour: colour3 }
+		]
+	);
+
+	// Cursor
+	var cursorRect = new CanvasUI.Rectangle(textX, textY - parseInt(gfx.fontSize), gfx.getTextWidth(this.text.charAt(this.canvasIndex)), parseInt(gfx.fontSize));
+	gfx.fillRect(cursorRect, '#99f');
+
+	// Text
+	if (this.isEnabled()) {
+		gfx.fillText(this.text, textX, textY, this.shadowColour);
+	} else {
+		gfx.fillText(this.text, textX + 1, textY + 1, this.shadowColour);
+		gfx.fillText(this.text, textX, textY, this.shineColour);
+	}
+
+	// Bevelled edges
+	var innerBevel = new CanvasUI.Rectangle(1, 1, drawRect.width - 2, drawRect.height - 2);
+
+	gfx.drawBevelledRect(innerBevel, this.shadowColour, this.shineColour);
+	gfx.drawBevelledRect(drawRect, this.shineColour, this.shadowColour);
+}
+
+/**
+ * Draws the gadget's border.
+ * @param gfx The Graphics object to draw with.
+ */
+CanvasUI.TextBox.prototype.drawBorder = function(gfx) { }
+
+/**
+ * Changes the label text.
+ * @param text The new label text.
+ */
+CanvasUI.TextBox.prototype.setText = function(text) {
+	this.text = text;
+	this.markRectsDamaged();
 }

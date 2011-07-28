@@ -83,6 +83,9 @@ function init(canvasId) {
 	scrollbarHorizontal.onValueChange = function(gadget) {
 		gadget.parent.children.getGadgetById(1).setText(parseInt(gadget.value));
 	}
+
+	var window3textbox1 = new CanvasUI.TextBox("text", 150, 10, 50, 80);
+	window3.children.add(window3textbox1);
 }
 		</script>
 	</head>
